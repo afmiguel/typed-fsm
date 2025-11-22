@@ -34,6 +34,10 @@ path = "examples/guards.rs"
 name = "logging"
 path = "examples/logging.rs"
 
+[[example]]
+name = "timeouts"
+path = "examples/timeouts.rs"
+
 [features]
 default = []
 logging = ["log"]
