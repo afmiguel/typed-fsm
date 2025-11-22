@@ -1,0 +1,358 @@
+//! # Finite State Machine Microframework
+//!
+//! A lightweight, zero-cost, declarative FSM generator using Rust macros.
+//! Designed for embedded systems (no-std compatible) and high-performance applications.
+//!
+//! ## Design Philosophy
+//!
+//! - **Zero Allocations:** Uses `enums` and static dispatch. No `Box`, `dyn`, or heap allocations.
+//! - **Memory Safety:** Leverages Rust's type system to prevent invalid state transitions.
+//! - **Hygiene:** Uses closure-like syntax to strictly define variable scopes.
+//! - **Performance:** Compiles to efficient machine code with minimal overhead.
+//!
+//! ## How It Works
+//!
+//! The `state_machine!` macro generates:
+//! 1. A `pub enum` where each variant represents a state (can carry data)
+//! 2. Methods for state lifecycle: `init()`, `dispatch()`, `on_entry()`, `on_exit()`, `on_process()`
+//! 3. Type-safe transition logic with compile-time validation
+//!
+//! The generated state machine follows this lifecycle for each event:
+//! ```text
+//! Event → Process → [Transition?] → Exit (old) → Entry (new) → Update State
+//! ```
+
+/// Represents the result of a state processing step.
+///
+/// This enum guides the state machine on whether to stay or switch states.
+/// It is returned by the `process` closure in each state.
+///
+/// # Examples
+///
+/// ```rust
+/// use typed_fsm::Transition;
+///
+/// #[derive(Debug)]
+/// enum MyState {
+///     NewState,
+///     Active { speed: u32 },
+/// }
+///
+/// // Stay in current state
+/// let no_change: Transition<MyState> = Transition::None;
+///
+/// // Transition to a new state
+/// let change = Transition::To(MyState::NewState);
+///
+/// // Transition with state data
+/// let with_data = Transition::To(MyState::Active { speed: 100 });
+/// ```
+pub enum Transition<S> {
+    /// Stay in the current state (no action required).
+    ///
+    /// Use this when an event should be handled but doesn't trigger a state change.
+    None,
+
+    /// Transition to a new state.
+    ///
+    /// This will trigger the `exit` action of the current state (if defined),
+    /// then the `entry` action of the new state (if defined).
+    ///
+    /// # Arguments
+    /// * `0` - The new state instance. Can carry data (payloads).
+    To(S),
+}
+
+/// Generates the State Machine Enum and its implementation.
+///
+/// This macro creates a `pub enum` with the specified name and implements
+/// the necessary logic for state transitions, entry/exit actions, and event processing.
+///
+/// # Macro Parameters
+///
+/// - **Name**: The identifier for the generated state machine enum
+/// - **Context**: The type of shared state accessible to all states
+/// - **Event**: The type of events that drive the state machine
+/// - **States**: Block defining all possible states and their behavior
+///
+/// # State Definition
+///
+/// Each state can have:
+/// - **entry** (optional): Closure executed once when entering the state
+/// - **process** (required): Closure that handles events and returns `Transition<S>`
+/// - **exit** (optional): Closure executed once when leaving the state
+///
+/// States can carry data by adding fields: `StateName { field: Type }`
+///
+/// # Complete Example
+///
+/// ```rust
+/// use typed_fsm::{state_machine, Transition};
+///
+/// struct MyContext {
+///     counter: u32,
+/// }
+///
+/// enum MyEvent {
+///     Start,
+///     Stop,
+/// }
+///
+/// state_machine! {
+///     Name: MyMachine,
+///     Context: MyContext,
+///     Event: MyEvent,
+///     States: {
+///         Idle => {
+///             entry: |ctx| {
+///                 println!("Entering Idle");
+///                 ctx.counter = 0;
+///             }
+///
+///             process: |_ctx, evt| {
+///                 match evt {
+///                     MyEvent::Start => Transition::To(MyMachine::Active { id: 1 }),
+///                     _ => Transition::None
+///                 }
+///             }
+///         },
+///
+///         Active { id: u32 } => {
+///             entry: |ctx| {
+///                 println!("Entering Active with id: {}", id);
+///                 ctx.counter += 1;
+///             }
+///
+///             process: |_ctx, evt| {
+///                 match evt {
+///                     MyEvent::Stop => Transition::To(MyMachine::Idle),
+///                     _ => Transition::None
+///                 }
+///             }
+///
+///             exit: |_ctx| {
+///                 println!("Leaving Active");
+///             }
+///         }
+///     }
+/// }
+/// ```
+///
+/// # Usage
+///
+/// ```rust
+/// # use typed_fsm::{state_machine, Transition};
+/// # struct MyContext { counter: u32 }
+/// # enum MyEvent { Start, Stop }
+/// # state_machine! {
+/// #     Name: MyMachine,
+/// #     Context: MyContext,
+/// #     Event: MyEvent,
+/// #     States: {
+/// #         Idle => {
+/// #             process: |_ctx, evt| {
+/// #                 match evt {
+/// #                     MyEvent::Start => Transition::To(MyMachine::Active { id: 1 }),
+/// #                     _ => Transition::None
+/// #                 }
+/// #             }
+/// #         },
+/// #         Active { id: u32 } => {
+/// #             process: |_ctx, evt| {
+/// #                 match evt {
+/// #                     MyEvent::Stop => Transition::To(MyMachine::Idle),
+/// #                     _ => Transition::None
+/// #                 }
+/// #             }
+/// #         }
+/// #     }
+/// # }
+/// let mut ctx = MyContext { counter: 0 };
+/// let mut fsm = MyMachine::Idle;
+///
+/// // Initialize (calls entry action of initial state)
+/// fsm.init(&mut ctx);
+///
+/// // Dispatch events
+/// fsm.dispatch(&mut ctx, &MyEvent::Start);
+/// fsm.dispatch(&mut ctx, &MyEvent::Stop);
+/// ```
+#[macro_export]
+macro_rules! state_machine {
+    (
+        Name: $enum_name:ident,
+        Context: $ctx_type:ty,
+        Event: $event_type:ty,
+        States: {
+            $(
+                // Captures the State Name and optional fields (e.g., Running { speed: u32 })
+                $state_name:ident $( { $($field_name:ident : $field_type:ty),* } )? => {
+
+                    // Optional Entry Block: entry: |ctx| { ... }
+                    $( entry: |$entry_ctx:ident| $entry_block:block )?
+
+                    // Mandatory Process Block: process: |ctx, evt| { ... }
+                    process: |$ctx_var:ident, $evt_var:ident| $process_block:block
+
+                    // Optional Exit Block: exit: |ctx| { ... }
+                    $( exit: |$exit_ctx:ident| $exit_block:block )?
+                }
+            ),* $(,)?
+        }
+    ) => {
+        /// Auto-generated State Machine Enum.
+        /// Holds the current state and its internal data.
+        #[derive(Debug)]
+        pub enum $enum_name {
+            $(
+                $state_name $( { $($field_name : $field_type),* } )?,
+            )*
+        }
+
+        impl $enum_name {
+            /// Initializes the state machine.
+            ///
+            /// **Must be called once** before the event loop starts to execute
+            /// the `entry` action of the initial state.
+            #[allow(unused_variables)]
+            pub fn init(&mut self, ctx: &mut $ctx_type) {
+                self.on_entry(ctx);
+            }
+
+            /// Internal: Executes the entry action for the current state.
+            #[allow(unused_variables)]
+            fn on_entry(&mut self, arg_ctx: &mut $ctx_type) {
+                match self {
+                    $(
+                        // Matches the current state and captures its fields (if any)
+                        Self::$state_name $( { $($field_name),* } )? => {
+                            // Only expands if the user defined an entry block
+                            $(
+                                // Rename the context variable to what the user chose (e.g., |ctx|)
+                                #[allow(unused_variables)]
+                                let $entry_ctx = arg_ctx;
+
+                                // Execute user code
+                                $entry_block
+                            )?
+                        }
+                    )*
+                }
+            }
+
+            /// Internal: Executes the exit action for the current state.
+            #[allow(unused_variables)]
+            fn on_exit(&mut self, arg_ctx: &mut $ctx_type) {
+                match self {
+                    $(
+                        Self::$state_name $( { $($field_name),* } )? => {
+                            $(
+                                #[allow(unused_variables)]
+                                let $exit_ctx = arg_ctx;
+                                $exit_block
+                            )?
+                        }
+                    )*
+                }
+            }
+
+            /// Internal: Determines the next state based on the event.
+            /// Returns a `Transition` enum.
+            fn on_process(&mut self, arg_ctx: &mut $ctx_type, arg_evt: &$event_type) -> Transition<Self> {
+                match self {
+                    $(
+                        // We allow unused variables here because the state might have data
+                        // (like 'speed') that the user logic doesn't need to access in this specific event.
+                        #[allow(unused_variables)]
+                        Self::$state_name $( { $($field_name),* } )? => {
+
+                            // Bind context and event to user-defined names (e.g., |ctx, evt|)
+                            #[allow(unused_variables)]
+                            let $ctx_var = arg_ctx;
+
+                            #[allow(unused_variables)]
+                            let $evt_var = arg_evt;
+
+                            // Execute user's process logic
+                            $process_block
+                        }
+                    )*
+                }
+            }
+
+            /// Main Event Dispatcher.
+            ///
+            /// This is the primary function to call in your main loop.
+            /// It handles the full lifecycle: `Process` -> `Exit Old` -> `Update` -> `Entry New`.
+            ///
+            /// # Performance
+            /// Marked `#[inline(always)]` to allow the compiler to flatten the state machine
+            /// into a highly optimized jump table / switch-case structure.
+            #[inline(always)]
+            pub fn dispatch(&mut self, ctx: &mut $ctx_type, event: &$event_type) {
+                // 1. Calculate Transition
+                let transition = self.on_process(ctx, event);
+
+                // 2. Apply Transition (if any)
+                if let Transition::To(mut new_state) = transition {
+                    // A. Exit current state
+                    self.on_exit(ctx);
+
+                    // B. Enter new state
+                    new_state.on_entry(ctx);
+
+                    // C. Update state (Move semantics - extremely fast)
+                    *self = new_state;
+                }
+            }
+        }
+    };
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_transition_none_is_none() {
+        // Verify that Transition::None can be created and pattern matched
+        let trans: Transition<i32> = Transition::None;
+        match trans {
+            Transition::None => {} // Test passes if we reach this branch
+            Transition::To(_) => panic!("Expected None"),
+        }
+    }
+
+    #[test]
+    fn test_transition_to_carries_value() {
+        // Verify that Transition::To carries the correct value
+        let trans = Transition::To(42);
+        match trans {
+            Transition::To(value) => assert_eq!(value, 42),
+            Transition::None => panic!("Expected To"),
+        }
+    }
+
+    #[test]
+    fn test_transition_with_enum() {
+        #[derive(Debug, PartialEq)]
+        enum State {
+            A,
+            B { value: u32 },
+        }
+
+        // Test with simple variant
+        let trans = Transition::To(State::A);
+        match trans {
+            Transition::To(State::A) => {} // Test passes if we reach this branch
+            _ => panic!("Expected State::A"),
+        }
+
+        // Test with variant carrying data
+        let trans = Transition::To(State::B { value: 100 });
+        match trans {
+            Transition::To(State::B { value }) => assert_eq!(value, 100),
+            _ => panic!("Expected State::B"),
+        }
+    }
+}

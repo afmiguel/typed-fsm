@@ -1,0 +1,25 @@
+[package]
+name = "typed-fsm"
+version = "0.1.0"
+edition = "2021"
+authors = ["Afonso Miguel"]
+description = "A lightweight, zero-cost, event-driven finite state machine microframework for Rust"
+readme = "README.md"
+repository = "https://github.com/yourusername/typed-fsm"
+license = "MIT OR Apache-2.0"
+keywords = ["fsm", "state-machine", "embedded", "event-driven", "no-std"]
+categories = ["embedded", "no-std", "data-structures"]
+
+[lib]
+name = "typed_fsm"
+path = "src/lib.rs"
+
+[[example]]
+name = "motor"
+path = "examples/motor.rs"
+
+[[example]]
+name = "traffic_light"
+path = "examples/traffic_light.rs"
+
+[dependencies]

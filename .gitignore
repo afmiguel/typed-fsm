@@ -1,0 +1,17 @@
+# Rust
+/target/
+Cargo.lock
+
+# IDE - RustRover / IntelliJ
+.idea/
+*.iml
+
+# IDE - VSCode
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code
+.claude/
