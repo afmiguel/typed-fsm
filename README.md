@@ -12,6 +12,7 @@ A lightweight, zero-cost, **event-driven** finite state machine microframework f
 
 ## Features
 
+### Core
 - **Event-Driven Architecture** - Built from the ground up for event-based systems
 - **Zero-cost abstraction** - Compiles to efficient jump tables with no runtime overhead
 - **Type-safe** - Compile-time validation of state transitions and events
@@ -20,6 +21,11 @@ A lightweight, zero-cost, **event-driven** finite state machine microframework f
 - **Embedded-ready** - `#![no_std]` compatible
 - **Stateful states** - States can carry typed data
 - **Lifecycle hooks** - `entry`, `process`, and `exit` actions per state
+
+### Advanced (v0.3.0)
+- **Guards** - Conditional transitions with boolean logic (security, validation, business rules)
+- **Logging** - Optional instrumentation via `log` or `tracing` crates (zero-cost when disabled)
+- **Timeouts** - Timer trait abstraction pattern for time-based transitions (platform-agnostic)
 
 ## Why typed-fsm?
 
@@ -596,15 +602,359 @@ If your use case requires `async fn` in entry/exit/process hooks, consider:
 
 These crates sacrifice zero-cost abstraction and require a runtime, but provide first-class async support.
 
+## Guards (Conditional Transitions)
+
+Guards are boolean conditions that must evaluate to true for a state transition to occur. They act as gatekeepers, validating data or checking preconditions before allowing state changes.
+
+### What are Guards?
+
+Guards allow you to implement conditional logic that determines whether an event should trigger a state transition. This is essential for:
+
+- **Security checks** - PIN verification, authentication
+- **Resource validation** - Check availability before allocation
+- **Business rules** - Enforce constraints and policies
+- **Data validation** - Verify input before accepting
+
+### How Guards Work
+
+Guards are implemented using standard Rust conditionals (`if/else`) within the `process` block. No special syntax is needed - just return `Transition::None` when the guard condition fails.
+
+### Example: ATM PIN Verification
+
+```rust
+use typed_fsm::{state_machine, Transition};
+
+struct ATMContext {
+    correct_pin: u32,
+    attempts: u32,
+}
+
+enum ATMEvent {
+    EnterPIN { pin: u32 },
+}
+
+state_machine! {
+    Name: ATM,
+    Context: ATMContext,
+    Event: ATMEvent,
+
+    States: {
+        WaitingPIN => {
+            process: |ctx, evt| {
+                match evt {
+                    ATMEvent::EnterPIN { pin } => {
+                        // Guard 1: Check if PIN is correct
+                        if *pin == ctx.correct_pin {
+                            println!("PIN accepted");
+                            Transition::To(ATM::Authenticated)
+                        } else {
+                            ctx.attempts += 1;
+
+                            // Guard 2: Block after 3 attempts
+                            if ctx.attempts >= 3 {
+                                Transition::To(ATM::Blocked)
+                            } else {
+                                Transition::None
+                            }
+                        }
+                    }
+                }
+            }
+        },
+
+        Authenticated => {
+            process: |_ctx, _evt| { Transition::None }
+        },
+
+        Blocked => {
+            process: |_ctx, _evt| { Transition::None }
+        }
+    }
+}
+```
+
+### Multiple Guard Conditions
+
+Guards can combine multiple conditions:
+
+```rust
+process: |ctx, evt| {
+    match evt {
+        OrderEvent::Submit => {
+            // Guard 1: Check stock
+            if !ctx.items_in_stock {
+                return Transition::None;
+            }
+
+            // Guard 2: Check credit limit
+            if ctx.order_value > ctx.customer_credit {
+                return Transition::None;
+            }
+
+            // All guards passed
+            Transition::To(Order::Submitted)
+        }
+    }
+}
+```
+
+### Guard Best Practices
+
+1. **Early Returns** - Return immediately when guard fails for clarity
+2. **Logging** - Log why guard failed for debugging
+3. **Context Updates** - Update context before returning (e.g., increment attempt counter)
+4. **Clear Messages** - Provide user feedback when guard blocks transition
+
+### Complete Example
+
+See [examples/guards.rs](examples/guards.rs) for a comprehensive example demonstrating:
+- ATM security guards (PIN verification)
+- Door lock access control
+- Order processing business rules
+
+Run with:
+```bash
+cargo run --example guards
+```
+
+## Timeouts (Time-Based Transitions)
+
+typed-fsm supports time-based state transitions through the **Timer trait abstraction pattern**. This pattern maintains `no_std` compatibility while providing a flexible, platform-agnostic way to implement timeouts, retries, and time-based behaviors.
+
+### What are Timeouts?
+
+Timeouts allow states to automatically transition after a specified time duration. They're essential for:
+
+- Connection timeouts
+- Retry mechanisms with exponential backoff
+- Button debouncing
+- Watchdog timers in embedded systems
+- Session expiration
+- Idle detection
+
+### Implementation Pattern
+
+Unlike some FSM libraries that provide built-in timer functionality (which would break `no_std` compatibility), typed-fsm uses a **trait abstraction pattern**:
+
+1. Define a `Timer` trait (user-provided or use the example)
+2. Store timer instances in your Context
+3. Check timeouts in your process blocks
+4. Reset timers in entry/exit hooks as needed
+
+This pattern is:
+- **Zero-cost** - No overhead if you don't use it
+- **no_std compatible** - Users implement for their platform
+- **Completely optional** - Ignore if you don't need timeouts
+- **Platform-agnostic** - Works with any time source
+
+### Timer Trait
+
+```rust
+pub trait Timer {
+    fn start(&mut self, duration_ms: u64);
+    fn is_expired(&self) -> bool;
+    fn reset(&mut self);
+}
+```
+
+### Platform Implementations
+
+**For std (Desktop/Server):**
+```rust
+use std::time::{Duration, Instant};
+
+struct StdTimer {
+    start_time: Option<Instant>,
+    duration: Duration,
+}
+
+impl Timer for StdTimer {
+    fn start(&mut self, duration_ms: u64) {
+        self.start_time = Some(Instant::now());
+        self.duration = Duration::from_millis(duration_ms);
+    }
+
+    fn is_expired(&self) -> bool {
+        if let Some(start) = self.start_time {
+            start.elapsed() >= self.duration
+        } else {
+            false
+        }
+    }
+
+    fn reset(&mut self) {
+        self.start_time = None;
+    }
+}
+```
+
+**For Embedded (no_std):**
+```rust
+// Example for embedded HAL timer
+struct EmbeddedTimer<'a> {
+    timer: &'a mut dyn embedded_hal::timer::CountDown,
+    is_running: bool,
+}
+
+impl Timer for EmbeddedTimer<'_> {
+    fn start(&mut self, duration_ms: u64) {
+        self.timer.start(duration_ms.millis());
+        self.is_running = true;
+    }
+
+    fn is_expired(&self) -> bool {
+        self.is_running && self.timer.wait().is_ok()
+    }
+
+    fn reset(&mut self) {
+        self.is_running = false;
+    }
+}
+```
+
+**For Testing (Mock):**
+```rust
+struct MockTimer {
+    remaining_ms: u64,
+}
+
+impl Timer for MockTimer {
+    fn start(&mut self, duration_ms: u64) {
+        self.remaining_ms = duration_ms;
+    }
+
+    fn is_expired(&self) -> bool {
+        self.remaining_ms == 0
+    }
+
+    fn reset(&mut self) {
+        self.remaining_ms = 0;
+    }
+}
+
+// In tests, manually decrement remaining_ms to simulate time
+```
+
+### Example: WiFi Connection with Timeout
+
+```rust
+use typed_fsm::{state_machine, Transition};
+
+struct WiFiContext {
+    timer: StdTimer,
+    retry_count: u32,
+    connection_timeout_ms: u64,
+}
+
+enum WiFiEvent {
+    Connect,
+    Connected,
+    CheckTimeout,  // Polled event to check timeout
+}
+
+state_machine! {
+    Name: WiFi,
+    Context: WiFiContext,
+    Event: WiFiEvent,
+
+    States: {
+        Connecting => {
+            entry: |ctx| {
+                println!("Connecting... (timeout: {}ms)", ctx.connection_timeout_ms);
+                // Start timeout timer
+                ctx.timer.start(ctx.connection_timeout_ms);
+            }
+
+            process: |ctx, evt| {
+                match evt {
+                    WiFiEvent::Connected => {
+                        println!("Connected!");
+                        ctx.timer.reset();
+                        Transition::To(WiFi::Active)
+                    }
+                    WiFiEvent::CheckTimeout => {
+                        // Check if timeout expired
+                        if ctx.timer.is_expired() {
+                            println!("Timeout!");
+                            ctx.timer.reset();
+                            Transition::To(WiFi::Failed)
+                        } else {
+                            Transition::None
+                        }
+                    }
+                    _ => Transition::None
+                }
+            }
+
+            exit: |ctx| {
+                ctx.timer.reset();
+            }
+        },
+
+        Active => { /* ... */ },
+        Failed => { /* ... */ }
+    }
+}
+```
+
+### Usage Pattern
+
+```rust
+let mut ctx = WiFiContext {
+    timer: StdTimer::new(),
+    retry_count: 0,
+    connection_timeout_ms: 5000,
+};
+
+let mut wifi = WiFi::Connecting;
+wifi.init(&mut ctx);
+
+// In your event loop:
+loop {
+    // Poll for events
+    if let Some(event) = get_event() {
+        wifi.dispatch(&mut ctx, &event);
+    }
+
+    // Periodically check for timeouts
+    wifi.dispatch(&mut ctx, &WiFiEvent::CheckTimeout);
+
+    thread::sleep(Duration::from_millis(100));
+}
+```
+
+### Best Practices
+
+1. **Store timers in Context** - Not in state variants (they get moved during transitions)
+2. **Use polling pattern** - Check timeouts via a `CheckTimeout` event in your event loop
+3. **Reset on exit** - Always reset timers in exit hooks to prevent stale timeouts
+4. **Start on entry** - Initialize timers when entering the state that needs them
+5. **Platform abstraction** - Implement Timer trait for your specific platform
+
+### Complete Example
+
+See [examples/timeouts.rs](examples/timeouts.rs) for comprehensive examples demonstrating:
+- WiFi connection with timeout and retry logic
+- Session timeout with idle detection
+- Button debouncing with time delays
+
+Run with:
+```bash
+cargo run --example timeouts
+```
+
 ## Testing
 
-This library has comprehensive test coverage (near 100%) with 30+ tests covering:
+This library has comprehensive test coverage (~100%) with **79 tests** covering:
 
-- **Unit tests** - Core `Transition` enum functionality
-- **Integration tests** - Complete FSM scenarios (toggle, counter, resources)
-- **Coverage tests** - All lifecycle hooks, optional entry/exit, self-transitions, multi-field states
-- **Edge case tests** - Early returns, nested patterns, wildcard matches, if-let patterns
-- **Doc tests** - All documentation examples are tested
+- **Unit tests** (3 tests) - Core `Transition` enum functionality
+- **Coverage tests** (10 tests) - All lifecycle hooks, optional entry/exit, self-transitions, multi-field states
+- **Edge case tests** (8 tests) - Early returns, nested patterns, wildcard matches, if-let patterns
+- **Integration tests** (13 tests) - Complete FSM scenarios (toggle, counter, resources, concurrency)
+- **Guards tests** (14 tests) - Conditional transitions (PIN verification, multiple guards, range checks)
+- **Logging tests** (9 tests) - Zero-cost abstraction, lifecycle hooks, self-transitions
+- **Timeouts tests** (11 tests) - Timer trait pattern, retry logic, session timeouts
+- **Doc tests** (11 tests) - All documentation examples are tested
 
 Run all tests:
 
@@ -616,9 +966,12 @@ cargo test
 cargo test -- --nocapture
 
 # Run a specific test suite
-cargo test --test integration_tests
-cargo test --test coverage_tests
-cargo test --test edge_cases_tests
+cargo test --test integration_tests  # 13 tests
+cargo test --test coverage_tests     # 10 tests
+cargo test --test edge_cases_tests   # 8 tests
+cargo test --test guards_tests       # 14 tests (v0.3.0)
+cargo test --test logging_tests      # 9 tests (v0.3.0)
+cargo test --test timeouts_tests     # 11 tests (v0.3.0)
 ```
 
 ## Examples

@@ -22,6 +22,23 @@
 //! Event → Process → [Transition?] → Exit (old) → Entry (new) → Update State
 //! ```
 
+// Logging support (optional) - Internal macro for code generation
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __fsm_log {
+    ($($arg:tt)*) => {
+        #[cfg(feature = "logging")]
+        {
+            log::info!($($arg)*);
+        }
+        #[cfg(feature = "tracing")]
+        {
+            tracing::info!($($arg)*);
+        }
+        // When features disabled, generate no code at all (true zero-cost)
+    };
+}
+
 /// Represents the result of a state processing step.
 ///
 /// This enum guides the state machine on whether to stay or switch states.
@@ -425,12 +442,14 @@ macro_rules! state_machine {
             /// - Call **before** the first `dispatch()`
             #[allow(unused_variables)]
             pub fn init(&mut self, ctx: &mut $ctx_type) {
+                $crate::__fsm_log!("[{}] init() -> {:?}", stringify!($enum_name), self);
                 self.on_entry(ctx);
             }
 
             /// Internal: Executes the entry action for the current state.
             #[allow(unused_variables)]
             fn on_entry(&mut self, arg_ctx: &mut $ctx_type) {
+                $crate::__fsm_log!("[{}] {:?}.entry()", stringify!($enum_name), self);
                 match self {
                     $(
                         // Matches the current state and captures its fields (if any)
@@ -452,6 +471,7 @@ macro_rules! state_machine {
             /// Internal: Executes the exit action for the current state.
             #[allow(unused_variables)]
             fn on_exit(&mut self, arg_ctx: &mut $ctx_type) {
+                $crate::__fsm_log!("[{}] {:?}.exit()", stringify!($enum_name), self);
                 match self {
                     $(
                         Self::$state_name $( { $($field_name),* } )? => {
@@ -503,15 +523,24 @@ macro_rules! state_machine {
                 let transition = self.on_process(ctx, event);
 
                 // 2. Apply Transition (if any)
-                if let Transition::To(mut new_state) = transition {
-                    // A. Exit current state
-                    self.on_exit(ctx);
+                match transition {
+                    Transition::To(mut new_state) => {
+                        $crate::__fsm_log!("[{}] {:?} + {:?} -> {:?}",
+                                           stringify!($enum_name), self, event, new_state);
 
-                    // B. Enter new state
-                    new_state.on_entry(ctx);
+                        // A. Exit current state
+                        self.on_exit(ctx);
 
-                    // C. Update state (Move semantics - extremely fast)
-                    *self = new_state;
+                        // B. Enter new state
+                        new_state.on_entry(ctx);
+
+                        // C. Update state (Move semantics - extremely fast)
+                        *self = new_state;
+                    }
+                    Transition::None => {
+                        $crate::__fsm_log!("[{}] {:?} + {:?} -> None (stayed)",
+                                           stringify!($enum_name), self, event);
+                    }
                 }
             }
         }

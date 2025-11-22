@@ -1,6 +1,6 @@
 [package]
 name = "typed-fsm"
-version = "0.2.0"
+version = "0.3.0-dev"
 edition = "2021"
 authors = ["Afonso Miguel"]
 description = "A lightweight, zero-cost, event-driven finite state machine microframework for Rust"
@@ -26,4 +26,28 @@ path = "examples/traffic_light.rs"
 name = "connection"
 path = "examples/connection.rs"
 
+[[example]]
+name = "guards"
+path = "examples/guards.rs"
+
+[[example]]
+name = "logging"
+path = "examples/logging.rs"
+
+[[example]]
+name = "timeouts"
+path = "examples/timeouts.rs"
+
+[features]
+default = []
+logging = ["log"]
+tracing = ["tracing-core"]
+
 [dependencies]
+# Optional logging support
+log = { version = "0.4", optional = true }
+tracing-core = { version = "0.1", optional = true, default-features = false }
+
+[dev-dependencies]
+env_logger = "0.11"
+log = "0.4"
