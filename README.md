@@ -10,14 +10,14 @@ A lightweight, zero-cost, **event-driven** finite state machine microframework f
 
 ## Features
 
-- ⚡ **Event-Driven Architecture** - Built from the ground up for event-based systems
-- 🚀 **Zero-cost abstraction** - Compiles to efficient jump tables with no runtime overhead
-- 🔒 **Type-safe** - Compile-time validation of state transitions and events
-- 🎯 **Declarative** - Clean, readable syntax using macros
-- 💾 **No allocations** - Uses enums and static dispatch (no `Box`, `dyn`, or heap)
-- 🔧 **Embedded-ready** - `#![no_std]` compatible
-- 📦 **Stateful states** - States can carry typed data
-- 🔄 **Lifecycle hooks** - `entry`, `process`, and `exit` actions per state
+- **Event-Driven Architecture** - Built from the ground up for event-based systems
+- **Zero-cost abstraction** - Compiles to efficient jump tables with no runtime overhead
+- **Type-safe** - Compile-time validation of state transitions and events
+- **Declarative** - Clean, readable syntax using macros
+- **No allocations** - Uses enums and static dispatch (no `Box`, `dyn`, or heap)
+- **Embedded-ready** - `#![no_std]` compatible
+- **Stateful states** - States can carry typed data
+- **Lifecycle hooks** - `entry`, `process`, and `exit` actions per state
 
 ## Quick Start
 
