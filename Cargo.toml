@@ -22,4 +22,8 @@ path = "examples/motor.rs"
 name = "traffic_light"
 path = "examples/traffic_light.rs"
 
+[[example]]
+name = "connection"
+path = "examples/connection.rs"
+
 [dependencies]

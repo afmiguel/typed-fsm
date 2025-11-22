@@ -27,6 +27,10 @@
 /// This enum guides the state machine on whether to stay or switch states.
 /// It is returned by the `process` closure in each state.
 ///
+/// # Type Parameters
+///
+/// * `S` - The state machine enum type
+///
 /// # Examples
 ///
 /// ```rust
@@ -47,10 +51,25 @@
 /// // Transition with state data
 /// let with_data = Transition::To(MyState::Active { speed: 100 });
 /// ```
+///
+/// # Performance
+///
+/// Creating a `Transition` has zero runtime overhead. The enum is optimized
+/// by the compiler and typically doesn't allocate any heap memory.
+///
+/// # Thread Safety
+///
+/// `Transition` is `Send` and `Sync` if the state type `S` is `Send` and `Sync`.
 pub enum Transition<S> {
     /// Stay in the current state (no action required).
     ///
     /// Use this when an event should be handled but doesn't trigger a state change.
+    ///
+    /// # Guarantees
+    ///
+    /// - No `exit` action will be called
+    /// - No `entry` action will be called
+    /// - State remains unchanged
     None,
 
     /// Transition to a new state.
@@ -59,7 +78,19 @@ pub enum Transition<S> {
     /// then the `entry` action of the new state (if defined).
     ///
     /// # Arguments
+    ///
     /// * `0` - The new state instance. Can carry data (payloads).
+    ///
+    /// # Guarantees
+    ///
+    /// - Current state's `exit` action executes first (if defined)
+    /// - New state's `entry` action executes second (if defined)
+    /// - State update happens last (using move semantics)
+    ///
+    /// # Performance
+    ///
+    /// State transitions use move semantics, making them extremely fast
+    /// (typically just a few CPU instructions).
     To(S),
 }
 
