@@ -6,6 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **typed-fsm** is a lightweight, zero-cost, **event-driven** Finite State Machine (FSM) microframework for Rust. It's designed for embedded systems (no-std compatible) and high-performance applications. The framework uses macros to generate type-safe, event-driven state machines with zero heap allocations.
 
+**Version:** 0.3.0-dev (on branch develop/v0.3.0)
+
+**New in v0.3.0:**
+- Guards (conditional transitions)
+- Logging support (optional via feature flags)
+- Timeouts (Timer trait abstraction pattern)
+
 ## Development Commands
 
 ```bash
@@ -15,25 +22,31 @@ cargo build
 # Build with release optimizations
 cargo build --release
 
-# Run the motor control example
-cargo run --example motor
+# Run examples
+cargo run --example motor          # Motor control system
+cargo run --example traffic_light  # Traffic light controller
+cargo run --example guards         # Guards (conditional transitions)
+cargo run --example timeouts       # Timeouts (timer trait pattern)
 
-# Run the traffic light example
-cargo run --example traffic_light
+# Run logging example with feature flag
+RUST_LOG=info cargo run --example logging --features logging
 
 # Check for errors without building
 cargo check
 
-# Run all tests (30+ tests)
+# Run all tests (79 tests with ~100% coverage)
 cargo test
 
 # Run tests with output
 cargo test -- --nocapture
 
 # Run specific test suites
-cargo test --test integration_tests  # Integration tests
-cargo test --test coverage_tests     # Coverage tests (lifecycle hooks, states)
-cargo test --test edge_cases_tests   # Edge cases (patterns, early returns)
+cargo test --test integration_tests  # Integration tests (13 tests)
+cargo test --test coverage_tests     # Coverage tests (10 tests)
+cargo test --test edge_cases_tests   # Edge cases (8 tests)
+cargo test --test guards_tests       # Guards tests (14 tests) - v0.3.0
+cargo test --test logging_tests      # Logging tests (9 tests) - v0.3.0
+cargo test --test timeouts_tests     # Timeouts tests (11 tests) - v0.3.0
 
 # Run only unit tests
 cargo test --lib
@@ -60,22 +73,34 @@ cargo clippy --all-targets --all-features
 typed-fsm/
 ├── src/
 │   ├── lib.rs              # Library entry point, public API
-│   └── fsm.rs              # Core macro implementation + unit tests
+│   └── fsm.rs              # Core macro implementation + unit tests + logging
 ├── examples/
-│   ├── motor.rs            # Motor control system example (complex, event-driven)
-│   └── traffic_light.rs    # Traffic light controller (simple, event-driven)
+│   ├── motor.rs            # Motor control system (complex, event-driven)
+│   ├── traffic_light.rs    # Traffic light controller (simple, event-driven)
+│   ├── guards.rs           # Guards: ATM, door lock, order processing (v0.3.0)
+│   ├── logging.rs          # Logging: payment FSM with instrumentation (v0.3.0)
+│   └── timeouts.rs         # Timeouts: WiFi, session, button debouncing (v0.3.0)
 ├── tests/
-│   ├── integration_tests.rs  # Integration tests (toggle, counter, resources)
-│   ├── coverage_tests.rs     # Comprehensive coverage tests (10 tests)
-│   └── edge_cases_tests.rs   # Edge cases and special scenarios (8 tests)
-├── Cargo.toml              # Package metadata and dependencies
+│   ├── integration_tests.rs  # Integration tests (13 tests)
+│   ├── coverage_tests.rs     # Coverage tests (10 tests)
+│   ├── edge_cases_tests.rs   # Edge cases (8 tests)
+│   ├── guards_tests.rs       # Guards tests (14 tests) - v0.3.0
+│   ├── logging_tests.rs      # Logging tests (9 tests) - v0.3.0
+│   └── timeouts_tests.rs     # Timeouts tests (11 tests) - v0.3.0
+├── Cargo.toml              # Package metadata, dependencies, features
 ├── README.md               # User-facing documentation
+├── CHANGELOG.md            # Version history and release notes
+├── ROADMAP.md              # Development roadmap and advanced features
 ├── LICENSE-MIT             # MIT License
 ├── LICENSE-APACHE          # Apache 2.0 License
 └── CLAUDE.md               # This file
 
-Test Coverage: 30+ tests covering ~100% of code paths
+Test Coverage: 79 tests covering ~100% of code paths
+  - Core: 3 unit + 10 coverage + 8 edge cases + 13 integration = 34 tests
+  - v0.3.0: 14 guards + 9 logging + 11 timeouts = 34 tests
+  - Docs: 11 doc tests
 Package Name: typed-fsm (crate name: typed_fsm)
+Version: 0.3.0-dev
 ```
 
 ## Architecture
