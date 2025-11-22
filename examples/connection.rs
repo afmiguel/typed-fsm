@@ -243,9 +243,10 @@ fn main() {
     connection.dispatch(&mut ctx, &ConnectionEvent::Connect);
 
     // Simulate first failure
-    connection.dispatch(&mut ctx, &ConnectionEvent::ConnectionFailed(
-        "Timeout".to_string(),
-    ));
+    connection.dispatch(
+        &mut ctx,
+        &ConnectionEvent::ConnectionFailed("Timeout".to_string()),
+    );
 
     // Simulate retry timeout
     connection.dispatch(&mut ctx, &ConnectionEvent::RetryTimeout);

@@ -25,11 +25,26 @@
 /// Represents the result of a state processing step.
 ///
 /// This enum guides the state machine on whether to stay or switch states.
-/// It is returned by the `process` closure in each state.
+/// **Every `process` closure must return a `Transition`.**
 ///
 /// # Type Parameters
 ///
 /// * `S` - The state machine enum type
+///
+/// # When to Use Each Variant
+///
+/// ## `Transition::None`
+/// Use when an event should be processed but doesn't require changing states:
+/// - Event updates context but state logic remains the same
+/// - Event should be ignored in the current state
+/// - Handling events that don't affect state flow
+///
+/// ## `Transition::To(State)`
+/// Use when an event should trigger a state change:
+/// - Event triggers a state transition
+/// - Conditions are met for moving to another state
+/// - Need to execute `exit` and `entry` hooks
+/// - Even for self-transitions (same state to same state)
 ///
 /// # Examples
 ///
@@ -38,18 +53,50 @@
 ///
 /// #[derive(Debug)]
 /// enum MyState {
-///     NewState,
+///     Idle,
 ///     Active { speed: u32 },
 /// }
 ///
-/// // Stay in current state
+/// // Stay in current state - no hooks execute
 /// let no_change: Transition<MyState> = Transition::None;
 ///
-/// // Transition to a new state
-/// let change = Transition::To(MyState::NewState);
+/// // Transition to a new state - exit + entry execute
+/// let change = Transition::To(MyState::Idle);
 ///
 /// // Transition with state data
 /// let with_data = Transition::To(MyState::Active { speed: 100 });
+/// ```
+///
+/// # Common Pattern in `process` Hook
+///
+/// ```rust
+/// # use typed_fsm::{state_machine, Transition};
+/// # struct Context { data: u32 }
+/// # enum Event { Update(u32), Activate, Ignore }
+/// # state_machine! {
+/// #     Name: FSM,
+/// #     Context: Context,
+/// #     Event: Event,
+/// #     States: {
+/// #         Idle => {
+/// process: |ctx, evt| {
+///     match evt {
+///         Event::Update(value) => {
+///             ctx.data = *value;        // Update context
+///             Transition::None          // Stay in same state
+///         },
+///         Event::Activate => {
+///             Transition::To(FSM::Active { speed: 100 })  // Change state
+///         },
+///         Event::Ignore => Transition::None  // Do nothing
+///     }
+/// }
+/// #         },
+/// #         Active { speed: u32 } => {
+/// #             process: |ctx, evt| { Transition::None }
+/// #         }
+/// #     }
+/// # }
 /// ```
 ///
 /// # Performance
@@ -65,27 +112,96 @@ pub enum Transition<S> {
     ///
     /// Use this when an event should be handled but doesn't trigger a state change.
     ///
-    /// # Guarantees
+    /// # When to Use
     ///
-    /// - No `exit` action will be called
-    /// - No `entry` action will be called
+    /// - Event updates context but state remains the same
+    /// - Event should be ignored in this state
+    /// - Processing an event that doesn't affect state flow
+    ///
+    /// # Lifecycle Impact
+    ///
+    /// - `process` executes
+    /// - `exit` does NOT execute (no state change)
+    /// - `entry` does NOT execute (no state change)
     /// - State remains unchanged
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use typed_fsm::{state_machine, Transition};
+    /// # struct Context { counter: u32 }
+    /// # enum Event { Increment }
+    /// # state_machine! {
+    /// #     Name: FSM,
+    /// #     Context: Context,
+    /// #     Event: Event,
+    /// #     States: {
+    /// #         Active => {
+    /// process: |ctx, evt| {
+    ///     match evt {
+    ///         Event::Increment => {
+    ///             ctx.counter += 1;   // Update context
+    ///             Transition::None    // Stay in Active state
+    ///         }
+    ///     }
+    /// }
+    /// #         }
+    /// #     }
+    /// # }
+    /// ```
     None,
 
     /// Transition to a new state.
     ///
-    /// This will trigger the `exit` action of the current state (if defined),
-    /// then the `entry` action of the new state (if defined).
+    /// This will trigger the full state transition lifecycle:
+    /// `exit` (old state) → `entry` (new state) → update state
+    ///
+    /// # When to Use
+    ///
+    /// - Event triggers a state change
+    /// - Conditions are met for transitioning
+    /// - Need to move to a different state
+    /// - Self-transitions (same state, but re-execute entry/exit)
     ///
     /// # Arguments
     ///
     /// * `0` - The new state instance. Can carry data (payloads).
     ///
-    /// # Guarantees
+    /// # Lifecycle Impact
     ///
-    /// - Current state's `exit` action executes first (if defined)
-    /// - New state's `entry` action executes second (if defined)
-    /// - State update happens last (using move semantics)
+    /// 1. `process` executes and returns new state
+    /// 2. Current state's `exit` executes (if defined)
+    /// 3. New state's `entry` executes (if defined)
+    /// 4. State updates to the new state
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use typed_fsm::{state_machine, Transition};
+    /// # struct Context { }
+    /// # enum Event { Start, Stop }
+    /// # state_machine! {
+    /// #     Name: FSM,
+    /// #     Context: Context,
+    /// #     Event: Event,
+    /// #     States: {
+    /// #         Idle => {
+    /// process: |ctx, evt| {
+    ///     match evt {
+    ///         Event::Start => {
+    ///             // Transition to Running state with data
+    ///             Transition::To(FSM::Running { speed: 100 })
+    ///         },
+    ///         Event::Stop => Transition::None
+    ///     }
+    /// }
+    /// #         },
+    /// #         Running { speed: u32 } => {
+    /// #             process: |ctx, evt| { Transition::None }
+    /// #         }
+    /// #     }
+    /// # }
+    /// ```
     ///
     /// # Performance
     ///
@@ -241,10 +357,72 @@ macro_rules! state_machine {
         }
 
         impl $enum_name {
-            /// Initializes the state machine.
+            /// Initializes the state machine by executing the entry action of the initial state.
             ///
-            /// **Must be called once** before the event loop starts to execute
-            /// the `entry` action of the initial state.
+            /// # CRITICAL: Must be called before the event loop!
+            ///
+            /// **Forgetting to call `init()` will cause silent failures:**
+            /// - The `entry` action of the initial state will NEVER execute
+            /// - State machine will still process events, but initialization is skipped
+            /// - This can lead to incorrect behavior that is difficult to debug
+            ///
+            /// # Correct Usage
+            ///
+            /// ```rust
+            /// # use typed_fsm::{state_machine, Transition};
+            /// # struct Context { count: u32 }
+            /// # enum Event { Tick }
+            /// # state_machine! {
+            /// #     Name: FSM,
+            /// #     Context: Context,
+            /// #     Event: Event,
+            /// #     States: {
+            /// #         Idle => {
+            /// #             entry: |ctx| { ctx.count = 0; }
+            /// #             process: |_ctx, _evt| { Transition::None }
+            /// #         }
+            /// #     }
+            /// # }
+            /// let mut ctx = Context { count: 0 };
+            /// let mut fsm = FSM::Idle;
+            ///
+            /// // CORRECT: Call init() before event loop
+            /// fsm.init(&mut ctx);
+            ///
+            /// // Now safe to dispatch events
+            /// fsm.dispatch(&mut ctx, &Event::Tick);
+            /// ```
+            ///
+            /// # Incorrect Usage (Common Mistake)
+            ///
+            /// ```rust,no_run
+            /// # use typed_fsm::{state_machine, Transition};
+            /// # struct Context { count: u32 }
+            /// # enum Event { Tick }
+            /// # state_machine! {
+            /// #     Name: FSM,
+            /// #     Context: Context,
+            /// #     Event: Event,
+            /// #     States: {
+            /// #         Idle => {
+            /// #             entry: |ctx| { ctx.count = 0; }
+            /// #             process: |_ctx, _evt| { Transition::None }
+            /// #         }
+            /// #     }
+            /// # }
+            /// let mut ctx = Context { count: 0 };
+            /// let mut fsm = FSM::Idle;
+            ///
+            /// // WRONG: Forgot to call init()!
+            /// // The entry action will NEVER execute!
+            /// fsm.dispatch(&mut ctx, &Event::Tick);
+            /// ```
+            ///
+            /// # When to Call
+            ///
+            /// - Call exactly **once** after creating the state machine
+            /// - Call **before** entering the event loop
+            /// - Call **before** the first `dispatch()`
             #[allow(unused_variables)]
             pub fn init(&mut self, ctx: &mut $ctx_type) {
                 self.on_entry(ctx);
