@@ -596,6 +596,121 @@ If your use case requires `async fn` in entry/exit/process hooks, consider:
 
 These crates sacrifice zero-cost abstraction and require a runtime, but provide first-class async support.
 
+## Guards (Conditional Transitions)
+
+Guards are boolean conditions that must evaluate to true for a state transition to occur. They act as gatekeepers, validating data or checking preconditions before allowing state changes.
+
+### What are Guards?
+
+Guards allow you to implement conditional logic that determines whether an event should trigger a state transition. This is essential for:
+
+- **Security checks** - PIN verification, authentication
+- **Resource validation** - Check availability before allocation
+- **Business rules** - Enforce constraints and policies
+- **Data validation** - Verify input before accepting
+
+### How Guards Work
+
+Guards are implemented using standard Rust conditionals (`if/else`) within the `process` block. No special syntax is needed - just return `Transition::None` when the guard condition fails.
+
+### Example: ATM PIN Verification
+
+```rust
+use typed_fsm::{state_machine, Transition};
+
+struct ATMContext {
+    correct_pin: u32,
+    attempts: u32,
+}
+
+enum ATMEvent {
+    EnterPIN { pin: u32 },
+}
+
+state_machine! {
+    Name: ATM,
+    Context: ATMContext,
+    Event: ATMEvent,
+
+    States: {
+        WaitingPIN => {
+            process: |ctx, evt| {
+                match evt {
+                    ATMEvent::EnterPIN { pin } => {
+                        // Guard 1: Check if PIN is correct
+                        if *pin == ctx.correct_pin {
+                            println!("PIN accepted");
+                            Transition::To(ATM::Authenticated)
+                        } else {
+                            ctx.attempts += 1;
+
+                            // Guard 2: Block after 3 attempts
+                            if ctx.attempts >= 3 {
+                                Transition::To(ATM::Blocked)
+                            } else {
+                                Transition::None
+                            }
+                        }
+                    }
+                }
+            }
+        },
+
+        Authenticated => {
+            process: |_ctx, _evt| { Transition::None }
+        },
+
+        Blocked => {
+            process: |_ctx, _evt| { Transition::None }
+        }
+    }
+}
+```
+
+### Multiple Guard Conditions
+
+Guards can combine multiple conditions:
+
+```rust
+process: |ctx, evt| {
+    match evt {
+        OrderEvent::Submit => {
+            // Guard 1: Check stock
+            if !ctx.items_in_stock {
+                return Transition::None;
+            }
+
+            // Guard 2: Check credit limit
+            if ctx.order_value > ctx.customer_credit {
+                return Transition::None;
+            }
+
+            // All guards passed
+            Transition::To(Order::Submitted)
+        }
+    }
+}
+```
+
+### Guard Best Practices
+
+1. **Early Returns** - Return immediately when guard fails for clarity
+2. **Logging** - Log why guard failed for debugging
+3. **Context Updates** - Update context before returning (e.g., increment attempt counter)
+4. **Clear Messages** - Provide user feedback when guard blocks transition
+
+### Complete Example
+
+See [examples/guards.rs](examples/guards.rs) for a comprehensive example demonstrating:
+- ATM security guards (PIN verification)
+- Door lock access control
+- Order processing business rules
+
+Run with:
+```bash
+cargo run --example guards
+```
+
 ## Testing
 
 This library has comprehensive test coverage (near 100%) with 30+ tests covering:

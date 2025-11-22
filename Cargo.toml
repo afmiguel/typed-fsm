@@ -1,6 +1,6 @@
 [package]
 name = "typed-fsm"
-version = "0.2.0"
+version = "0.3.0-dev"
 edition = "2021"
 authors = ["Afonso Miguel"]
 description = "A lightweight, zero-cost, event-driven finite state machine microframework for Rust"
