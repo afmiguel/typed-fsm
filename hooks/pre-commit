@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Git pre-commit hook that runs CI checks locally
+# This ensures code passes CI before committing
+#
+# To install this hook:
+#   ./install-hooks.sh
+#
+# To bypass the hook for a single commit:
+#   git commit --no-verify
+
+set -e
+
+# Run the CI validation script
+./ci-local.sh
+
+# If we get here, all checks passed
+exit 0

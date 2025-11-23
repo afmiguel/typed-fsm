@@ -13,6 +13,40 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Logging support (optional via feature flags)
 - Timeouts (Timer trait abstraction pattern)
 
+## CI Validation (Run Before Committing)
+
+**IMPORTANT:** Always validate changes locally before committing to avoid CI failures.
+
+```bash
+# Run all CI checks locally (recommended before every commit)
+./ci-local.sh
+
+# Run with verbose output to see detailed errors
+./ci-local.sh --verbose
+
+# Optional: Install git pre-commit hook (runs CI checks automatically)
+./install-hooks.sh
+
+# If hook is installed, bypass it for a single commit with:
+git commit --no-verify
+```
+
+### What ci-local.sh checks:
+- ✓ Code formatting (rustfmt)
+- ✓ Linting (clippy with -D warnings)
+- ✓ All tests (unit, integration, doc tests)
+- ✓ Documentation build
+- ✓ MSRV compatibility (Rust 1.75.0)
+- ✓ Build with all features
+
+**MSRV Setup (required for full validation):**
+```bash
+# Install the MSRV toolchain for complete local validation
+rustup install 1.75.0
+
+# The script will automatically use it to verify MSRV compatibility
+```
+
 ## Development Commands
 
 ```bash
