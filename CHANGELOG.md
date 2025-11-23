@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2] - 2025-11-23
+
+### Added
+- **Comprehensive FAQ Section** - 18 new questions covering v0.3.0 and v0.4.0 features
+  - Guards & Conditional Transitions (3 questions with code examples)
+  - Logging & Observability (3 questions on zero-cost abstraction)
+  - Timeouts & Time-Based Transitions (2 questions on timer patterns)
+  - ISR & Interrupt Safety (4 questions on ISR-safe dispatch)
+  - Concurrency & Thread Safety (6 questions on queue, overflow, performance)
+  - **Total: 29 FAQ entries** covering all features from v0.1.0 through v0.4.0
+
+This is a documentation-only release to help users understand and adopt the
+new features introduced in v0.3.0 and v0.4.0.
+
 ## [0.4.1] - 2025-11-23
 
 ### Changed
@@ -271,6 +285,7 @@ ISR-safe dispatch feature on crates.io and docs.rs.
   - CLAUDE.md for AI-assisted development
   - Dual licensing (MIT/Apache-2.0)
 
+[0.4.2]: https://github.com/afmiguel/typed-fsm/releases/tag/v0.4.2
 [0.4.1]: https://github.com/afmiguel/typed-fsm/releases/tag/v0.4.1
 [0.4.0]: https://github.com/afmiguel/typed-fsm/releases/tag/v0.4.0
 [0.3.0]: https://github.com/afmiguel/typed-fsm/releases/tag/v0.3.0
