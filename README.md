@@ -1217,13 +1217,145 @@ A: Yes! A state's context can contain another state machine. This allows hierarc
 ### Safety Questions
 
 **Q: Is this library safe?**
-A: Yes! The library contains zero `unsafe` blocks and has zero dependencies. It's been thoroughly tested with 30+ tests covering 100% of code paths.
+A: Yes! The library contains zero `unsafe` blocks and has zero dependencies by default. It's been thoroughly tested with 100+ tests covering 100% of code paths.
 
 **Q: Can invalid states occur?**
 A: No! Rust's type system prevents invalid states at compile time. If it compiles, the state transitions are valid.
 
 **Q: Is this production-ready?**
 A: Yes! The library has comprehensive tests, documentation, and follows Rust best practices. It's ready for production use.
+
+### Guards & Conditional Transitions (v0.3.0)
+
+**Q: How do I implement conditional transitions (guards)?**
+A: Use `if` conditions inside your `process` handler:
+```rust
+process: |ctx, evt| {
+    match evt {
+        Event::Unlock(code) => {
+            if ctx.authorized_codes.contains(code) {
+                Transition::To(DoorFSM::Unlocked)
+            } else {
+                ctx.failed_attempts += 1;
+                Transition::None  // Stay locked
+            }
+        }
+    }
+}
+```
+
+**Q: Can I have complex guard conditions?**
+A: Yes! Use any Rust expression. Guards can check context state, event data, external conditions, etc. For multiple conditions, use `if/else if/else` chains or helper functions.
+
+**Q: Do I need a special feature for guards?**
+A: No! Guards are just normal Rust code in your `process` handler. No special syntax or features required.
+
+### Logging & Observability (v0.3.0)
+
+**Q: How do I add logging to my FSM?**
+A: Enable the `logging` feature:
+```toml
+[dependencies]
+typed-fsm = { version = "0.4", features = ["logging"] }
+```
+This automatically logs all state transitions, entry/exit actions, and events using the `log` crate.
+
+**Q: Does logging add overhead when disabled?**
+A: Zero overhead! When the `logging` feature is disabled, no logging code is generated at all. It's a true zero-cost abstraction.
+
+**Q: Can I use tracing instead of log?**
+A: Not yet, but it's planned. Currently only the `log` crate is supported via the `logging` feature.
+
+### Timeouts & Time-Based Transitions (v0.3.0)
+
+**Q: How do I implement timeouts?**
+A: Implement a `Timer` trait and check elapsed time in your process handler:
+```rust
+process: |ctx, evt| {
+    match evt {
+        Event::Tick => {
+            if ctx.timer.elapsed() > timeout {
+                Transition::To(WiFiFSM::TimedOut)
+            } else {
+                Transition::None
+            }
+        }
+    }
+}
+```
+See `examples/timeouts.rs` for complete implementations.
+
+**Q: Do I need a specific timer library?**
+A: No! The timer pattern is platform-agnostic. Use `std::time::Instant` for std environments, or your HAL's timer for embedded systems.
+
+### ISR & Interrupt Safety (v0.4.0)
+
+**Q: When do I need the `concurrent` feature?**
+A: Enable `concurrent` when you need to call `dispatch()` from:
+- **Interrupt Service Routines (ISRs)**: Timer interrupts, UART interrupts, GPIO interrupts
+- **Multiple threads**: Concurrent access from different threads
+- **RTOS environments**: Tasks + ISRs running simultaneously
+
+**Q: What's the difference between Arc<Mutex<FSM>> and the concurrent feature?**
+A:
+- **Arc<Mutex<FSM>>**: Thread-safe but NOT ISR-safe. Cannot be used in interrupt handlers.
+- **concurrent feature**: Both thread-safe AND ISR-safe. Uses atomic operations and lock-free queuing specifically designed for interrupt contexts.
+
+**Q: How does ISR-safe dispatch work?**
+A: When dispatch is called from an ISR while another dispatch is active:
+1. The event is **atomically queued** (FIFO order)
+2. No blocking or waiting occurs
+3. The active dispatch processes all queued events before returning
+4. Fast and deterministic (~100 cycles for ISR enqueue)
+
+**Q: Can I use dispatch() directly in an interrupt handler?**
+A: Yes, with the `concurrent` feature enabled:
+```rust
+#[interrupt]
+fn TIMER_IRQ() {
+    unsafe {
+        if let Some(fsm) = FSM.as_mut() {
+            fsm.dispatch(&mut ctx, &Event::TimerTick);  // ✅ Safe!
+        }
+    }
+}
+```
+
+### Concurrency & Thread Safety (v0.4.0)
+
+**Q: What's the performance overhead of the concurrent feature?**
+A: ~10-15% overhead when enabled with no contention. Zero overhead when the feature is disabled (default).
+
+**Q: Do I need critical-section for the concurrent feature?**
+A: Yes. For `std` environments, it's automatically included. For embedded/no_std, you need to provide a critical-section implementation from your HAL.
+
+**Q: Can events be dropped?**
+A: Yes, if the queue is full (default: 16 events). Use `dropped_events_count()` to monitor:
+```rust
+if MyFSM::dropped_events_count() > 0 {
+    log::warn!("Queue overflow detected!");
+}
+```
+
+**Q: How do I configure queue size?**
+A: Use the `QueueCapacity` parameter:
+```rust
+state_machine! {
+    Name: MyFSM,
+    Context: Ctx,
+    Event: Event,
+    QueueCapacity: 64,  // Increase to 64 events
+    States: { ... }
+}
+```
+
+**Q: What happens in debug vs release builds when queue overflows?**
+A:
+- **Debug builds**: Panic immediately to catch issues during development
+- **Release builds**: Silent drop with atomic counter increment for production monitoring
+
+**Q: My events need to be Clone for concurrent feature. Why?**
+A: Events are cloned when queued. This allows the ISR/thread to return immediately without waiting. Most event types are small and cheap to clone.
 
 ## Documentation
 
