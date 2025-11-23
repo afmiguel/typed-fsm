@@ -81,6 +81,8 @@ Enable the `concurrent` feature for interrupt-safe and thread-safe dispatch:
 ### When to Choose Each
 
 **Choose typed-fsm if you need:**
+- **ISR-safe dispatch** - Call `dispatch()` from interrupt handlers (timer, UART, GPIO interrupts)
+- **Thread-safe concurrency** - Safe concurrent access with atomic protection and event queuing
 - Absolute zero dependencies by default (embedded, security-critical)
 - Guaranteed zero-cost abstraction with no runtime overhead
 - Explicit lifecycle hooks (entry/process/exit)
@@ -92,25 +94,33 @@ Enable the `concurrent` feature for interrupt-safe and thread-safe dispatch:
 - Async/await support for concurrent state machines
 - State-local storage (data bound to specific states)
 - More mature ecosystem with extensive documentation
+- Note: No native ISR support - requires manual synchronization
 
 **Choose smlang if you need:**
 - Async state machines out of the box
-- Guards (conditional transitions) and actions
+- Guards (conditional transitions) and actions built into DSL
 - DSL-first approach with procedural macros
+- Note: No native ISR support - requires manual synchronization
 
 **Choose rust-fsm if you need:**
-- Automatic Mermaid diagram generation
+- Automatic Mermaid diagram generation for visualization
 - Classical Mealy/Moore machine patterns
 - Large community and battle-tested in production
 - Flexible transition specifications
+- Note: No native ISR support - requires manual synchronization
+
+**Don't choose typed-fsm if you need:**
+- Native async/await support (hooks are synchronous)
+- Built-in hierarchical state machines (use composition instead)
+- Automatic state diagram generation
 
 ### Key Advantages of typed-fsm
 
-1. **True Zero Dependencies by Default** - No dependencies in default configuration, perfect for security-critical applications. Optional features add minimal, vetted dependencies only when needed (`logging`: +1, `concurrent`: +3)
-2. **Genuine Zero-Cost Abstraction** - Compiles to optimal code without procedural macro overhead
-3. **Thread-Safety by Design** - Automatic Send+Sync when applicable, explicitly documented and tested
+1. **ISR-Safe and Thread-Safe Concurrency** - The only Rust FSM library with native ISR-safe dispatch. Call `dispatch()` from interrupt handlers (timer, UART, GPIO) or multiple threads with atomic protection and lock-free event queuing. Perfect for embedded systems and RTOS environments.
+2. **True Zero Dependencies by Default** - No dependencies in default configuration, perfect for security-critical applications. Optional features add minimal, vetted dependencies only when needed (`logging`: +1, `concurrent`: +3)
+3. **Genuine Zero-Cost Abstraction** - Compiles to optimal code without procedural macro overhead. Concurrent feature adds only ~10-15% overhead when enabled, zero when disabled.
 4. **Complete Lifecycle Model** - Clean entry/process/exit pattern without DSL limitations
-5. **Embedded-First** - Designed for resource-constrained environments from day one
+5. **Embedded-First** - Designed for resource-constrained environments from day one with `#![no_std]` support
 
 ## Quick Start
 
@@ -118,7 +128,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-typed-fsm = "0.1.0"
+typed-fsm = "0.4"
 ```
 
 ### Simplest Example: Blink

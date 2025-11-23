@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2025-11-23
+
+### Changed
+- **README.md**: Enhanced documentation to prominently feature ISR-safe dispatch
+  - "When to Choose Each" section now highlights ISR/concurrency as primary differentiator
+  - Added notes to competitor options about lack of native ISR support
+  - Added "Don't choose typed-fsm if you need" section for transparency
+  - Updated "Key Advantages" to lead with ISR-safe concurrency
+  - Fixed Quick Start version from 0.1.0 to 0.4
+
+This is a documentation-only release to improve discoverability of the unique
+ISR-safe dispatch feature on crates.io and docs.rs.
+
 ## [0.4.0] - 2025-11-23
 
 ### Added
@@ -258,6 +271,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - CLAUDE.md for AI-assisted development
   - Dual licensing (MIT/Apache-2.0)
 
+[0.4.1]: https://github.com/afmiguel/typed-fsm/releases/tag/v0.4.1
 [0.4.0]: https://github.com/afmiguel/typed-fsm/releases/tag/v0.4.0
 [0.3.0]: https://github.com/afmiguel/typed-fsm/releases/tag/v0.3.0
 [0.2.0]: https://github.com/afmiguel/typed-fsm/releases/tag/v0.2.0
