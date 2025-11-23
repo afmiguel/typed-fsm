@@ -1,15 +1,17 @@
 //! # typed-fsm: Event-Driven Finite State Machine Microframework
 //!
-//! A lightweight, zero-cost, **event-driven** FSM generator for Rust using macros.
+//! A lightweight, zero-cost, **event-driven** FSM generator for Rust with **ISR and concurrency support**.
 //! Designed for embedded systems (no-std compatible) and high-performance applications.
 //!
 //! ## Features
 //!
 //! - **Event-Driven Architecture** - Built from the ground up for event-based systems
+//! - **ISR-Safe Dispatch** - Call `dispatch()` from interrupt service routines (optional `concurrent` feature)
+//! - **Thread-Safe Concurrency** - Safe concurrent access from multiple threads with atomic protection
 //! - **Zero-cost abstraction** - Compiles to efficient jump tables with no runtime overhead
 //! - **Type-safe** - Compile-time validation of state transitions and events
 //! - **No allocations** - Uses enums and static dispatch (no `Box`, `dyn`, or heap)
-//! - **Embedded-ready** - `#![no_std]` compatible with zero dependencies
+//! - **Embedded-ready** - `#![no_std]` compatible with zero dependencies by default
 //! - **Stateful states** - States can carry typed data
 //! - **Lifecycle hooks** - `entry`, `process`, and `exit` actions per state
 //!

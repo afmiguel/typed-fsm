@@ -6,19 +6,21 @@
 [![CI](https://github.com/afmiguel/typed-fsm/workflows/CI/badge.svg)](https://github.com/afmiguel/typed-fsm/actions)
 [![Downloads](https://img.shields.io/crates/d/typed-fsm.svg)](https://crates.io/crates/typed-fsm)
 
-A lightweight, zero-cost, **event-driven** finite state machine microframework for Rust.
+A lightweight, zero-cost, **event-driven** finite state machine microframework for Rust with **ISR and concurrency support**.
 
-**typed-fsm** provides a declarative macro-based approach to building type-safe, event-driven state machines. Perfect for embedded systems, protocol implementations, game logic, and any application requiring robust state management.
+**typed-fsm** provides a declarative macro-based approach to building type-safe, event-driven state machines. Perfect for embedded systems with interrupt handlers, real-time applications, protocol implementations, and any scenario requiring robust state management with thread-safe or ISR-safe dispatch.
 
 ## Features
 
 ### Core
 - **Event-Driven Architecture** - Built from the ground up for event-based systems
+- **ISR-Safe Dispatch** - Call `dispatch()` from interrupt service routines (optional `concurrent` feature)
+- **Thread-Safe Concurrency** - Safe concurrent access from multiple threads with atomic protection
 - **Zero-cost abstraction** - Compiles to efficient jump tables with no runtime overhead
 - **Type-safe** - Compile-time validation of state transitions and events
 - **Declarative** - Clean, readable syntax using macros
 - **No allocations** - Uses enums and static dispatch (no `Box`, `dyn`, or heap)
-- **Embedded-ready** - `#![no_std]` compatible
+- **Embedded-ready** - `#![no_std]` compatible with zero dependencies by default
 - **Stateful states** - States can carry typed data
 - **Lifecycle hooks** - `entry`, `process`, and `exit` actions per state
 
@@ -27,12 +29,20 @@ A lightweight, zero-cost, **event-driven** finite state machine microframework f
 - **Logging** - Optional instrumentation via `log` or `tracing` crates (zero-cost when disabled)
 - **Timeouts** - Timer trait abstraction pattern for time-based transitions (platform-agnostic)
 
-### Optional Features (v0.4.0)
-- **Concurrency** (`concurrent`) - ISR and multithreading safe dispatch with atomic operations
-  - ✅ Call `dispatch()` from interrupt service routines (ISRs)
-  - ✅ Call `dispatch()` from multiple threads
-  - ✅ Automatic event queuing when dispatch is busy
-  - ~10-15% overhead when enabled, **zero** overhead when disabled
+### Concurrency & ISR Support (v0.4.0)
+Enable the `concurrent` feature for interrupt-safe and thread-safe dispatch:
+- **ISR-Safe Dispatch** - Safe to call from interrupt service routines in embedded systems
+  - Timer interrupts, UART interrupts, GPIO interrupts
+  - RTOS task + ISR combined scenarios
+  - Lock-free event queuing with FIFO ordering
+- **Multithreading** - Safe concurrent access from multiple threads
+  - Atomic protection against re-entrant dispatch calls
+  - Automatic event queuing when dispatch is busy
+  - Configurable queue capacity per FSM (default: 16 events)
+- **Dropped Events Monitoring** - Track and diagnose queue overflows
+  - `dropped_events_count()` API for production monitoring
+  - Debug mode panics on overflow for early detection
+- **Performance** - ~10-15% overhead when enabled, **zero** overhead when disabled
 
 ## Why typed-fsm?
 

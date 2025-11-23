@@ -4,12 +4,12 @@ version = "0.4.0"
 edition = "2021"
 rust-version = "1.75.0"
 authors = ["Afonso Miguel"]
-description = "A lightweight, zero-cost, event-driven finite state machine microframework for Rust"
+description = "Event-driven FSM with ISR-safe dispatch for embedded systems. Zero-cost, no_std, type-safe state machines with interrupt and concurrency support."
 readme = "README.md"
 repository = "https://github.com/afmiguel/typed-fsm"
 license = "MIT OR Apache-2.0"
-keywords = ["fsm", "state-machine", "embedded", "event-driven", "no-std"]
-categories = ["embedded", "no-std", "data-structures"]
+keywords = ["fsm", "state-machine", "embedded", "interrupt", "concurrency"]
+categories = ["embedded", "no-std", "data-structures", "concurrency"]
 
 [lib]
 name = "typed_fsm"
