@@ -6,12 +6,12 @@ use typed_fsm::{state_machine, Transition};
 // Test 1: Simple Toggle State Machine
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct ToggleContext {
     toggle_count: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum ToggleEvent {
     Toggle,
 }
@@ -70,12 +70,12 @@ fn test_simple_toggle() {
 // Test 2: State with Data
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct CounterContext {
     value: i32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum CounterEvent {
     Increment,
     Decrement,
@@ -147,13 +147,13 @@ fn test_stateful_counter() {
 // Test 3: Exit Actions
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct ResourceContext {
     acquired: bool,
     released: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum ResourceEvent {
     Acquire,
     Release,
@@ -218,12 +218,12 @@ fn test_exit_actions() {
 // Test 4: No State Change
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct NoopContext {
     event_count: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum NoopEvent {
     DoNothing,
 }
@@ -265,12 +265,12 @@ fn test_no_state_change() {
 // Test 5: Multiple Fields in State
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct MultiFieldContext {
     sum: i32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum MathEvent {
     Add(i32, i32),
     Done,
@@ -330,13 +330,13 @@ fn test_multiple_state_fields() {
 // Test 6: Init Behavior - With init() call
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct InitContext {
     entry_called: bool,
     entry_call_count: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum InitEvent {
     Trigger,
 }
@@ -419,14 +419,14 @@ fn test_init_not_called_skips_initial_entry() {
 // Test 7: Blink Pattern (like the blink.rs example)
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct BlinkContext {
     led_on_count: u32,
     led_off_count: u32,
     tick_count: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum BlinkEvent {
     Tick,
 }
@@ -531,12 +531,12 @@ fn test_blink_multiple_cycles() {
 // Test 8: Hierarchical State Machine Pattern
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct NestedVolumeContext {
     volume_level: u8,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum VolumeCommand {
     Up,
     Down,
@@ -583,7 +583,7 @@ struct HierarchicalContext {
     volume_ctx: NestedVolumeContext,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum HierarchicalEvent {
     Activate,
     Deactivate,
@@ -719,7 +719,7 @@ fn test_hierarchical_nested_fsm_reinitialization() {
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct ConcurrentContext {
     counter: u32,
 }

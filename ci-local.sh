@@ -76,18 +76,19 @@ run_check "Rustfmt (code formatting)" "cargo fmt --all -- --check"
 run_check "Clippy (linting)" "cargo clippy --all-targets --all-features -- -D warnings"
 
 # 3. Run tests
+# Note: Tests must run with --test-threads=1 when concurrent feature is enabled
+# because concurrent_tests.rs uses shared global static variables
 print_step "Test Suite (all tests)"
 if $VERBOSE; then
-    cargo test --all-features
+    cargo test --all-features -- --test-threads=1
     print_success "Test Suite passed"
 else
-    if cargo test --all-features --quiet > /dev/null 2>&1; then
-        print_success "Test Suite passed"
-    else
+    if ! cargo test --all-features --quiet -- --test-threads=1 > /dev/null 2>&1; then
         print_error "Test Suite failed"
         echo "Run with --verbose to see detailed errors"
         exit 1
     fi
+    print_success "Test Suite passed"
 fi
 
 # 4. Build documentation

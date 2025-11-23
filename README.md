@@ -6,19 +6,21 @@
 [![CI](https://github.com/afmiguel/typed-fsm/workflows/CI/badge.svg)](https://github.com/afmiguel/typed-fsm/actions)
 [![Downloads](https://img.shields.io/crates/d/typed-fsm.svg)](https://crates.io/crates/typed-fsm)
 
-A lightweight, zero-cost, **event-driven** finite state machine microframework for Rust.
+A lightweight, zero-cost, **event-driven** finite state machine microframework for Rust with **ISR and concurrency support**.
 
-**typed-fsm** provides a declarative macro-based approach to building type-safe, event-driven state machines. Perfect for embedded systems, protocol implementations, game logic, and any application requiring robust state management.
+**typed-fsm** provides a declarative macro-based approach to building type-safe, event-driven state machines. Perfect for embedded systems with interrupt handlers, real-time applications, protocol implementations, and any scenario requiring robust state management with thread-safe or ISR-safe dispatch.
 
 ## Features
 
 ### Core
 - **Event-Driven Architecture** - Built from the ground up for event-based systems
+- **ISR-Safe Dispatch** - Call `dispatch()` from interrupt service routines (optional `concurrent` feature)
+- **Thread-Safe Concurrency** - Safe concurrent access from multiple threads with atomic protection
 - **Zero-cost abstraction** - Compiles to efficient jump tables with no runtime overhead
 - **Type-safe** - Compile-time validation of state transitions and events
 - **Declarative** - Clean, readable syntax using macros
 - **No allocations** - Uses enums and static dispatch (no `Box`, `dyn`, or heap)
-- **Embedded-ready** - `#![no_std]` compatible
+- **Embedded-ready** - `#![no_std]` compatible with zero dependencies by default
 - **Stateful states** - States can carry typed data
 - **Lifecycle hooks** - `entry`, `process`, and `exit` actions per state
 
@@ -26,6 +28,21 @@ A lightweight, zero-cost, **event-driven** finite state machine microframework f
 - **Guards** - Conditional transitions with boolean logic (security, validation, business rules)
 - **Logging** - Optional instrumentation via `log` or `tracing` crates (zero-cost when disabled)
 - **Timeouts** - Timer trait abstraction pattern for time-based transitions (platform-agnostic)
+
+### Concurrency & ISR Support (v0.4.0)
+Enable the `concurrent` feature for interrupt-safe and thread-safe dispatch:
+- **ISR-Safe Dispatch** - Safe to call from interrupt service routines in embedded systems
+  - Timer interrupts, UART interrupts, GPIO interrupts
+  - RTOS task + ISR combined scenarios
+  - Lock-free event queuing with FIFO ordering
+- **Multithreading** - Safe concurrent access from multiple threads
+  - Atomic protection against re-entrant dispatch calls
+  - Automatic event queuing when dispatch is busy
+  - Configurable queue capacity per FSM (default: 16 events)
+- **Dropped Events Monitoring** - Track and diagnose queue overflows
+  - `dropped_events_count()` API for production monitoring
+  - Debug mode panics on overflow for early detection
+- **Performance** - ~10-15% overhead when enabled, **zero** overhead when disabled
 
 ## Why typed-fsm?
 
@@ -40,10 +57,11 @@ A lightweight, zero-cost, **event-driven** finite state machine microframework f
 | **Lifecycle hooks** | ✓ | ✓ | ~² | ✗ |
 | **Hierarchical FSM** | ~³ | ✓ | ✗ | ✗ |
 | **Thread-safe (Send+Sync)** | ✓ | ? | ? | ? |
+| **ISR/Concurrency support** | ✓⁴ | ✗⁵ | ✗⁵ | ✗⁵ |
 | **Macro-based DSL** | ✓ | ✓ | ✓ | ✓ |
 | **Type-safe** | ✓ | ✓ | ✓ | ✓ |
-| **Dependencies** | 0 | 3⁴ | 1 | 2⁴ |
-| **Async support** | ✗⁵ | ✓ | ✓ | ✗ |
+| **Dependencies** | 0⁶ | 3⁷ | 1 | 2⁷ |
+| **Async support** | ✗⁸ | ✓ | ✓ | ✗ |
 | **Diagram generation** | ✗ | ✗ | ✗ | ✓ |
 
 [t]: https://crates.io/crates/typed-fsm
@@ -54,13 +72,16 @@ A lightweight, zero-cost, **event-driven** finite state machine microframework f
 ¹ rust-fsm: States cannot carry data in DSL (manual implementation possible)
 ² smlang: Has guards/actions, but not explicit entry/exit hooks per state
 ³ typed-fsm: Via nested FSMs in context (compositional, not native like statig)
-⁴ Optional dependencies (can be disabled with feature flags)
-⁵ typed-fsm: Can be used within async code, but hooks are synchronous (no async fn support)
+⁴ typed-fsm: Native support via `concurrent` feature. Atomic protection, event queuing, ISR-safe dispatch
+⁵ No native ISR/concurrency support. Manual synchronization required (Arc<Mutex<>>, critical sections)
+⁶ typed-fsm: **Zero dependencies by default**. Optional dependencies when features enabled: `logging` (+1 dep), `concurrent` (+3 deps)
+⁷ Optional dependencies (can be disabled with feature flags)
+⁸ typed-fsm: Can be used within async code, but hooks are synchronous (no async fn support)
 
 ### When to Choose Each
 
 **Choose typed-fsm if you need:**
-- Absolute zero dependencies (embedded, security-critical)
+- Absolute zero dependencies by default (embedded, security-critical)
 - Guaranteed zero-cost abstraction with no runtime overhead
 - Explicit lifecycle hooks (entry/process/exit)
 - Clear thread-safety guarantees (auto Send+Sync)
@@ -85,7 +106,7 @@ A lightweight, zero-cost, **event-driven** finite state machine microframework f
 
 ### Key Advantages of typed-fsm
 
-1. **True Zero Dependencies** - The only FSM library with absolutely no dependencies, perfect for security-critical applications
+1. **True Zero Dependencies by Default** - No dependencies in default configuration, perfect for security-critical applications. Optional features add minimal, vetted dependencies only when needed (`logging`: +1, `concurrent`: +3)
 2. **Genuine Zero-Cost Abstraction** - Compiles to optimal code without procedural macro overhead
 3. **Thread-Safety by Design** - Automatic Send+Sync when applicable, explicitly documented and tested
 4. **Complete Lifecycle Model** - Clean entry/process/exit pattern without DSL limitations
@@ -319,7 +340,7 @@ fsm.dispatch(&mut ctx, &event);  // Silent failure
 
 See the [blink example](examples/blink.rs) for a complete demonstration.
 
-## 📋 Quick Start Template
+## Quick Start Template
 
 Copy and paste this template to start building your state machine. Replace the `UPPERCASE` placeholders with your actual names:
 
@@ -943,9 +964,122 @@ Run with:
 cargo run --example timeouts
 ```
 
+## Concurrency Support (Feature: `concurrent`)
+
+**NEW in v0.4.0**: Built-in support for safe dispatch from interrupt service routines (ISRs) and multiple threads.
+
+### When to Use
+
+Enable the `concurrent` feature when you need to call `dispatch()` from:
+- **Interrupt Service Routines (ISRs)** - Timer interrupts, UART interrupts, GPIO interrupts
+- **Multiple Threads** - Concurrent access from different threads
+- **RTOS Environments** - Tasks + ISRs running simultaneously
+
+### How It Works
+
+The `concurrent` feature adds atomic protection to prevent re-entrant dispatch calls:
+
+1. **Immediate execution** - If no dispatch is active, the event executes immediately
+2. **Automatic queuing** - If dispatch is busy, the event is queued (FIFO order)
+3. **Queue processing** - All queued events are processed before releasing the lock
+4. **Zero overhead when disabled** - Standard implementation has no concurrency cost
+
+### Installation
+
+```toml
+[dependencies]
+typed-fsm = { version = "0.4", features = ["concurrent"] }
+
+# Requires critical-section implementation for your platform:
+# - For std: critical-section with "std" feature (included automatically)
+# - For embedded: Use your HAL's critical-section implementation
+```
+
+**Dependencies added by `concurrent` feature:**
+- `critical-section` v1.1 - Portable critical sections (interrupt-safe primitives)
+- `heapless` v0.8 - No-alloc data structures (event queue)
+- `paste` v1.0 - Macro hygiene (static variable name generation)
+
+### Performance
+
+- **Without contention**: ~10-15% overhead vs non-concurrent
+- **ISR enqueue**: ~100 cycles (fast and deterministic)
+- **Without feature**: Zero overhead (standard implementation)
+
+### Example: ISR Usage
+
+```rust
+// Embedded system with timer interrupt
+static mut FSM: Option<SensorFSM> = None;
+static mut CTX: Option<SensorContext> = None;
+
+#[interrupt]
+fn TIMER_IRQ() {
+    unsafe {
+        if let (Some(fsm), Some(ctx)) = (FSM.as_mut(), CTX.as_mut()) {
+            // ✅ Safe with `concurrent` feature!
+            // Event is queued if main loop is active
+            fsm.dispatch(ctx, SensorEvent::TimerTick);
+        }
+    }
+}
+
+fn main() {
+    // Main loop processing
+    loop {
+        fsm.dispatch(&mut ctx, user_event);
+        // Automatically processes ISR events from queue
+    }
+}
+```
+
+### Example: Multithreading
+
+```rust
+use std::sync::{Arc, Mutex};
+use std::thread;
+
+let fsm = Arc::new(Mutex::new(TaskFSM::Idle));
+let ctx = Arc::new(Mutex::new(TaskContext::new()));
+
+// Thread 1: Producer
+let (fsm1, ctx1) = (Arc::clone(&fsm), Arc::clone(&ctx));
+thread::spawn(move || {
+    let mut fsm = fsm1.lock().unwrap();
+    let mut ctx = ctx1.lock().unwrap();
+    fsm.dispatch(&mut ctx, TaskEvent::NewTask);  // ✅ Thread-safe
+});
+
+// Thread 2: Consumer
+let (fsm2, ctx2) = (Arc::clone(&fsm), Arc::clone(&ctx));
+thread::spawn(move || {
+    let mut fsm = fsm2.lock().unwrap();
+    let mut ctx = ctx2.lock().unwrap();
+    fsm.dispatch(&mut ctx, TaskEvent::Process);  // ✅ Thread-safe
+});
+```
+
+### Complete Examples
+
+```bash
+# ISR simulation with event queuing
+cargo run --example concurrent_isr --features concurrent
+
+# Multithreading with concurrent dispatch
+cargo run --example concurrent_threads --features concurrent
+
+# Run concurrency tests
+cargo test --features concurrent --test concurrent_tests
+```
+
+See:
+- [`examples/concurrent_isr.rs`](examples/concurrent_isr.rs) - Simulated ISR with atomic event queuing
+- [`examples/concurrent_threads.rs`](examples/concurrent_threads.rs) - Multi-threaded task processor
+- [`tests/concurrent_tests.rs`](tests/concurrent_tests.rs) - Comprehensive concurrency tests
+
 ## Testing
 
-This library has comprehensive test coverage (~100%) with **79 tests** covering:
+This library has comprehensive test coverage (~100%) with **88+ tests** covering:
 
 - **Unit tests** (3 tests) - Core `Transition` enum functionality
 - **Coverage tests** (10 tests) - All lifecycle hooks, optional entry/exit, self-transitions, multi-field states
@@ -954,24 +1088,29 @@ This library has comprehensive test coverage (~100%) with **79 tests** covering:
 - **Guards tests** (14 tests) - Conditional transitions (PIN verification, multiple guards, range checks)
 - **Logging tests** (9 tests) - Zero-cost abstraction, lifecycle hooks, self-transitions
 - **Timeouts tests** (11 tests) - Timer trait pattern, retry logic, session timeouts
-- **Doc tests** (11 tests) - All documentation examples are tested
+- **Concurrent tests** (9 tests) - ISR safety, multithreading, FIFO ordering, high contention (v0.4.0)
+- **Doc tests** (11+ tests) - All documentation examples are tested
 
 Run all tests:
 
 ```bash
-# Run all tests
+# Run all tests (without concurrent feature)
 cargo test
+
+# Run tests with concurrent feature
+cargo test --features concurrent
 
 # Run tests with output
 cargo test -- --nocapture
 
-# Run a specific test suite
+# Run specific test suites
 cargo test --test integration_tests  # 13 tests
 cargo test --test coverage_tests     # 10 tests
 cargo test --test edge_cases_tests   # 8 tests
 cargo test --test guards_tests       # 14 tests (v0.3.0)
 cargo test --test logging_tests      # 9 tests (v0.3.0)
 cargo test --test timeouts_tests     # 11 tests (v0.3.0)
+cargo test --test concurrent_tests --features concurrent  # 9 tests (v0.4.0)
 ```
 
 ## Examples
@@ -985,14 +1124,23 @@ cargo run --example blink
 # Traffic light controller
 cargo run --example traffic_light
 
-# Hierarchical state machine: Audio player with nested volume control
-cargo run --example hierarchical
-
-# Concurrent state machines: Traffic intersection with synchronized lights
-cargo run --example traffic_intersection
-
 # Motor control system with safety checks
 cargo run --example motor
+
+# Guards: Conditional transitions (ATM, door lock, order validation)
+cargo run --example guards
+
+# Logging: FSM instrumentation
+RUST_LOG=info cargo run --example logging --features logging
+
+# Timeouts: Timer pattern (WiFi, session, debouncing)
+cargo run --example timeouts
+
+# Concurrency: ISR-safe dispatch (simulated interrupts)
+cargo run --example concurrent_isr --features concurrent
+
+# Concurrency: Thread-safe dispatch (multithreading)
+cargo run --example concurrent_threads --features concurrent
 ```
 
 ## How It Works

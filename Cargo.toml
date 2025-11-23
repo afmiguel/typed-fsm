@@ -1,15 +1,15 @@
 [package]
 name = "typed-fsm"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 rust-version = "1.75.0"
 authors = ["Afonso Miguel"]
-description = "A lightweight, zero-cost, event-driven finite state machine microframework for Rust"
+description = "Event-driven FSM with ISR-safe dispatch for embedded systems. Zero-cost, no_std, type-safe state machines with interrupt and concurrency support."
 readme = "README.md"
 repository = "https://github.com/afmiguel/typed-fsm"
 license = "MIT OR Apache-2.0"
-keywords = ["fsm", "state-machine", "embedded", "event-driven", "no-std"]
-categories = ["embedded", "no-std", "data-structures"]
+keywords = ["fsm", "state-machine", "embedded", "interrupt", "concurrency"]
+categories = ["embedded", "no-std", "data-structures", "concurrency"]
 
 [lib]
 name = "typed_fsm"
@@ -39,14 +39,32 @@ path = "examples/logging.rs"
 name = "timeouts"
 path = "examples/timeouts.rs"
 
+[[example]]
+name = "concurrent_isr"
+path = "examples/concurrent_isr.rs"
+required-features = ["concurrent"]
+
+[[example]]
+name = "concurrent_threads"
+path = "examples/concurrent_threads.rs"
+required-features = ["concurrent"]
+
 [features]
 default = []
 logging = ["log"]
+concurrent = ["critical-section", "heapless", "paste"]
 
 [dependencies]
 # Optional logging support
 log = { version = "0.4", optional = true }
 
+# Optional concurrency support (ISR + Multithreading)
+critical-section = { version = "1.1", optional = true }
+heapless = { version = "0.8", optional = true }
+paste = { version = "1.0", optional = true }
+
 [dev-dependencies]
 env_logger = "0.11"
 log = "0.4"
+# critical-section implementation for tests (std-based)
+critical-section = { version = "1.1", features = ["std"] }

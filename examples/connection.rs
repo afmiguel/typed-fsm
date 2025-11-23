@@ -14,7 +14,7 @@ use typed_fsm::{state_machine, Transition};
 // ============================================================================
 
 /// Represents the connection manager's shared state.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ConnectionContext {
     /// Server address
     pub server: String,
@@ -42,7 +42,7 @@ impl ConnectionContext {
 // ============================================================================
 
 /// Events that drive the connection state machine.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ConnectionEvent {
     /// User initiated connect
     Connect,

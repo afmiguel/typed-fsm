@@ -6,12 +6,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **typed-fsm** is a lightweight, zero-cost, **event-driven** Finite State Machine (FSM) microframework for Rust. It's designed for embedded systems (no-std compatible) and high-performance applications. The framework uses macros to generate type-safe, event-driven state machines with zero heap allocations.
 
-**Version:** 0.3.0-dev (on branch develop/v0.3.0)
+**Version:** 0.4.0-dev (on branch develop/v0.4.0)
 
 **New in v0.3.0:**
 - Guards (conditional transitions)
 - Logging support (optional via feature flags)
 - Timeouts (Timer trait abstraction pattern)
+
+**New in v0.4.0:**
+- Concurrency support (ISR and multithreading safe dispatch)
+- Dropped events monitoring (`dropped_events_count()`, `reset_dropped_count()`)
+- Configurable queue capacity per FSM (`QueueCapacity` parameter)
 
 ## CI Validation (Run Before Committing)
 
@@ -68,11 +73,11 @@ RUST_LOG=info cargo run --example logging --features logging
 # Check for errors without building
 cargo check
 
-# Run all tests (79 tests with ~100% coverage)
-cargo test
+# Run all tests (100 tests with ~100% coverage)
+cargo test --all-features -- --test-threads=1
 
 # Run tests with output
-cargo test -- --nocapture
+cargo test --all-features -- --nocapture --test-threads=1
 
 # Run specific test suites
 cargo test --test integration_tests  # Integration tests (13 tests)
@@ -81,6 +86,7 @@ cargo test --test edge_cases_tests   # Edge cases (8 tests)
 cargo test --test guards_tests       # Guards tests (14 tests) - v0.3.0
 cargo test --test logging_tests      # Logging tests (9 tests) - v0.3.0
 cargo test --test timeouts_tests     # Timeouts tests (11 tests) - v0.3.0
+cargo test --test concurrent_tests --features concurrent -- --test-threads=1  # Concurrent tests (21 tests) - v0.4.0
 
 # Run only unit tests
 cargo test --lib
@@ -107,20 +113,23 @@ cargo clippy --all-targets --all-features
 typed-fsm/
 ├── src/
 │   ├── lib.rs              # Library entry point, public API
-│   └── fsm.rs              # Core macro implementation + unit tests + logging
+│   └── fsm.rs              # Core macro implementation + unit tests + logging + concurrency
 ├── examples/
 │   ├── motor.rs            # Motor control system (complex, event-driven)
 │   ├── traffic_light.rs    # Traffic light controller (simple, event-driven)
 │   ├── guards.rs           # Guards: ATM, door lock, order processing (v0.3.0)
 │   ├── logging.rs          # Logging: payment FSM with instrumentation (v0.3.0)
-│   └── timeouts.rs         # Timeouts: WiFi, session, button debouncing (v0.3.0)
+│   ├── timeouts.rs         # Timeouts: WiFi, session, button debouncing (v0.3.0)
+│   ├── concurrent_isr.rs   # Concurrent: ISR-safe dispatch (v0.4.0)
+│   └── concurrent_threads.rs # Concurrent: Multi-threaded dispatch (v0.4.0)
 ├── tests/
 │   ├── integration_tests.rs  # Integration tests (13 tests)
 │   ├── coverage_tests.rs     # Coverage tests (10 tests)
 │   ├── edge_cases_tests.rs   # Edge cases (8 tests)
 │   ├── guards_tests.rs       # Guards tests (14 tests) - v0.3.0
 │   ├── logging_tests.rs      # Logging tests (9 tests) - v0.3.0
-│   └── timeouts_tests.rs     # Timeouts tests (11 tests) - v0.3.0
+│   ├── timeouts_tests.rs     # Timeouts tests (11 tests) - v0.3.0
+│   └── concurrent_tests.rs   # Concurrent tests (21 tests) - v0.4.0
 ├── Cargo.toml              # Package metadata, dependencies, features
 ├── README.md               # User-facing documentation
 ├── CHANGELOG.md            # Version history and release notes
@@ -129,12 +138,13 @@ typed-fsm/
 ├── LICENSE-APACHE          # Apache 2.0 License
 └── CLAUDE.md               # This file
 
-Test Coverage: 79 tests covering ~100% of code paths
+Test Coverage: 100 tests covering ~100% of code paths
   - Core: 3 unit + 10 coverage + 8 edge cases + 13 integration = 34 tests
   - v0.3.0: 14 guards + 9 logging + 11 timeouts = 34 tests
+  - v0.4.0: 21 concurrent tests = 21 tests
   - Docs: 11 doc tests
 Package Name: typed-fsm (crate name: typed_fsm)
-Version: 0.3.0-dev
+Version: 0.4.0-dev
 ```
 
 ## Architecture
