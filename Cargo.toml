@@ -2,6 +2,7 @@
 name = "typed-fsm"
 version = "0.3.0"
 edition = "2021"
+rust-version = "1.75.0"
 authors = ["Afonso Miguel"]
 description = "A lightweight, zero-cost, event-driven finite state machine microframework for Rust"
 readme = "README.md"
