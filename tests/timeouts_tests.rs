@@ -19,7 +19,7 @@ pub trait Timer {
     fn reset(&mut self);
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MockTimer {
     remaining_ms: u64,
     is_running: bool,

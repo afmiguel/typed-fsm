@@ -52,7 +52,7 @@ pub trait Timer {
 // std Implementation (using std::time::Instant)
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct StdTimer {
     start_time: Option<Instant>,
     duration: Duration,

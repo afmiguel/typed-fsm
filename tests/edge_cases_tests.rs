@@ -6,13 +6,13 @@ use typed_fsm::{state_machine, Transition};
 // Test 1: Early return in process block
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct EarlyReturnContext {
     error_handled: bool,
     normal_flow: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum EarlyReturnEvent {
     ErrorCondition,
     NormalEvent,
@@ -72,12 +72,12 @@ fn test_early_return_in_process() {
 // Test 2: Unused context and event parameters
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct UnusedParamsContext {
     value: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum UnusedParamsEvent {
     Event1,
     Event2,
@@ -131,12 +131,12 @@ fn test_unused_parameters() {
 // Test 3: State fields not used in some hooks
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct PartialFieldContext {
     last_id: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum PartialFieldEvent {
     Next,
 }
@@ -192,19 +192,19 @@ fn test_partial_field_usage() {
 // Test 4: Nested match patterns in process
 // ============================================================================
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 enum Status {
     Active,
     Inactive,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct NestedMatchContext {
     status_changes: u32,
     last_value: Option<u32>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum NestedMatchEvent {
     Update { status: Status, value: Option<u32> },
     Clear,
@@ -301,13 +301,13 @@ fn test_nested_match_patterns() {
 // Test 5: Multiple consecutive self-transitions
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct MultiSelfContext {
     iteration: u32,
     resets: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum MultiSelfEvent {
     Iterate,
 }
@@ -366,12 +366,12 @@ fn test_multiple_self_transitions() {
 // Test 6: States with different numbers of fields
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct MixedFieldsContext {
     state_name: &'static str,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[allow(clippy::enum_variant_names)]
 enum MixedFieldsEvent {
     ToZero,
@@ -488,13 +488,13 @@ fn test_states_with_mixed_fields() {
 // Test 7: Wildcard patterns in match
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct WildcardContext {
     default_count: u32,
     specific_count: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum WildcardEvent {
     Specific,
     Other1,
@@ -559,13 +559,13 @@ fn test_wildcard_pattern_in_match() {
 // Test 8: If-let patterns in process
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct IfLetContext {
     some_count: u32,
     none_count: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum IfLetEvent {
     MaybeValue(Option<u32>),
 }

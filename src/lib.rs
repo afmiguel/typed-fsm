@@ -26,7 +26,7 @@
 //! }
 //!
 //! // Event: Simple tick event
-//! #[derive(Debug)]
+//! #[derive(Debug, Clone)]
 //! enum Event {
 //!     Tick,
 //! }
@@ -89,7 +89,7 @@
 //! }
 //!
 //! // Define your events
-//! #[derive(Debug)]
+//! #[derive(Debug, Clone)]
 //! enum LightEvent {
 //!     TurnOn,
 //!     TurnOff,
@@ -152,7 +152,7 @@
 //! ```rust
 //! # use typed_fsm::{state_machine, Transition};
 //! # struct Context { data: u32 }
-//! # #[derive(Debug)]
+//! # #[derive(Debug, Clone)]
 //! # enum Event { Update(u32), Ignore }
 //! # state_machine! {
 //! #     Name: FSM,
@@ -187,7 +187,7 @@
 //! ```rust
 //! # use typed_fsm::{state_machine, Transition};
 //! # struct Context { }
-//! # #[derive(Debug)]
+//! # #[derive(Debug, Clone)]
 //! # enum Event { Start, Stop }
 //! # state_machine! {
 //! #     Name: Machine,
@@ -236,7 +236,7 @@
 //! # use std::sync::{Arc, Mutex};
 //! # use std::thread;
 //! # struct Context { }
-//! # #[derive(Debug)]
+//! # #[derive(Debug, Clone)]
 //! # enum Event { Tick }
 //! # state_machine! {
 //! #     Name: FSM,
@@ -266,14 +266,64 @@
 //! **Note:** The core framework is `#![no_std]` compatible. Concurrency examples
 //! use std, but FSMs work in no_std environments with alternatives like `spin::Mutex`.
 //!
+//! ## ISR and Multithreading Safety (Feature: `concurrent`)
+//!
+//! For **interrupt service routines (ISRs)** and true **concurrent multithreading**,
+//! enable the optional `concurrent` feature. This adds protection against re-entrant
+//! dispatch calls using atomic operations and lock-free queues.
+//!
+//! ### When to Use
+//!
+//! Enable `concurrent` when:
+//! - **ISRs call `dispatch()`**: Interrupt handlers need to generate events
+//! - **Multiple threads call `dispatch()`**: Concurrent access from different threads
+//! - **ISRs + Threads**: Combined scenario (e.g., RTOS environments)
+//!
+//! ### How It Works
+//!
+//! 1. **Immediate execution**: If no dispatch is active, executes immediately
+//! 2. **Queue if busy**: If dispatch is already active, event is queued (capacity: 16 events)
+//! 3. **FIFO processing**: Queued events are processed in order before releasing lock
+//! 4. **Atomic protection**: Uses `AtomicBool` with compare-exchange and `critical_section::Mutex`
+//!
+//! ### Requirements
+//!
+//! - **Event type must be `Clone`**: Events are cloned when enqueued
+//! - **critical-section implementation**: Requires a `critical-section` provider for your platform
+//!   - For `std`: Use `critical-section = { version = "1.1", features = ["std"] }`
+//!   - For embedded: Use your HAL's critical-section implementation
+//!
+//! ### Important Limitations
+//!
+//! - **Queue capacity**: Fixed at 16 events. Events are silently dropped when queue is full.
+//! - **Shared statics**: All FSMs of the same type share global static variables (lock + queue).
+//!   This is normally not an issue as each FSM type has a unique name.
+//!
+//! ### Usage
+//!
+//! ```toml
+//! [dependencies]
+//! typed-fsm = { version = "0.4", features = ["concurrent"] }
+//! ```
+//!
+//! ### Complete Examples
+//!
+//! - `examples/concurrent_isr.rs` - Simulated ISR with event queuing
+//! - `examples/concurrent_threads.rs` - Multithreading with concurrent dispatch
+//! - `tests/concurrent_tests.rs` - Comprehensive concurrency tests
+//!
+//! **Performance:** ~10-15% overhead when enabled, zero overhead when disabled.
+//!
 //! ## Examples
 //!
 //! See the `examples/` directory for complete examples:
-//! - `blink.rs` - The simplest possible FSM (LED On/Off) - **start here!**
-//! - `traffic_light.rs` - Traffic light controller with timing
-//! - `hierarchical.rs` - Nested state machines (audio player with volume control)
-//! - `traffic_intersection.rs` - Concurrent FSMs with thread synchronization
-//! - `motor.rs` - Motor control system with safety checks and stateful states
+//! - `motor.rs` - Motor control (complex, event-driven) - **start here!**
+//! - `traffic_light.rs` - Traffic light controller (simple, event-driven)
+//! - `guards.rs` - Conditional transitions (ATM, door lock, orders)
+//! - `logging.rs` - FSM with instrumentation
+//! - `timeouts.rs` - Timer pattern (WiFi, session, debouncing)
+//! - `concurrent_isr.rs` - ISR-safe dispatch (requires `concurrent` feature)
+//! - `concurrent_threads.rs` - Thread-safe dispatch (requires `concurrent` feature)
 
 #![no_std]
 

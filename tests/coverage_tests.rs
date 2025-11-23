@@ -9,14 +9,14 @@ use typed_fsm::{state_machine, Transition};
 // Test 1: State with all hooks (entry, process, exit)
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct AllHooksContext {
     entry_called: bool,
     process_called: bool,
     exit_called: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum AllHooksEvent {
     Next,
 }
@@ -82,12 +82,12 @@ fn test_all_hooks_called_in_order() {
 // Test 2: State without entry hook
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct NoEntryContext {
     counter: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum NoEntryEvent {
     Increment,
 }
@@ -128,12 +128,12 @@ fn test_state_without_entry() {
 // Test 3: State without exit hook
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct NoExitContext {
     transitions: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum NoExitEvent {
     Switch,
 }
@@ -187,12 +187,12 @@ fn test_state_without_exit() {
 // Test 4: Self-transition (state transitions to itself)
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct SelfTransitionContext {
     reset_count: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum SelfTransitionEvent {
     Reset,
     DoNothing,
@@ -247,12 +247,12 @@ fn test_self_transition() {
 // Test 5: Multiple transitions in sequence
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct ChainContext {
     path: Vec<&'static str>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum ChainEvent {
     Next,
 }
@@ -358,12 +358,12 @@ fn test_multiple_transitions_sequence() {
 // Test 6: State with multiple fields and complex data
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct ComplexContext {
     last_config: Option<(u32, u32, u32)>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum ComplexEvent {
     Configure(u32, u32, u32),
     Clear,
@@ -448,14 +448,14 @@ fn test_complex_state_with_multiple_fields() {
 // Test 7: Verify Transition::None doesn't trigger exit/entry
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct NoTransitionContext {
     entry_count: u32,
     exit_count: u32,
     event_count: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum NoTransitionEvent {
     Process,
     Switch,
@@ -545,12 +545,12 @@ fn test_transition_none_no_exit_entry() {
 // Test 8: Single state FSM (edge case)
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct SingleStateContext {
     value: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum SingleStateEvent {
     Increment,
     Decrement,
@@ -609,20 +609,20 @@ fn test_single_state_machine() {
 // Test 9: Match patterns in process blocks
 // ============================================================================
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 enum Color {
     Red,
     Green,
     Blue,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct PatternContext {
     current_color: Color,
     changes: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum PatternEvent {
     SetColor(Color),
     Reset,
@@ -694,12 +694,12 @@ fn test_pattern_matching_in_process() {
 // Test 10: Minimal state (only process, no entry/exit)
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct MinimalContext {
     processed: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum MinimalEvent {
     Trigger,
 }

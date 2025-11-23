@@ -39,14 +39,32 @@ path = "examples/logging.rs"
 name = "timeouts"
 path = "examples/timeouts.rs"
 
+[[example]]
+name = "concurrent_isr"
+path = "examples/concurrent_isr.rs"
+required-features = ["concurrent"]
+
+[[example]]
+name = "concurrent_threads"
+path = "examples/concurrent_threads.rs"
+required-features = ["concurrent"]
+
 [features]
 default = []
 logging = ["log"]
+concurrent = ["critical-section", "heapless", "paste"]
 
 [dependencies]
 # Optional logging support
 log = { version = "0.4", optional = true }
 
+# Optional concurrency support (ISR + Multithreading)
+critical-section = { version = "1.1", optional = true }
+heapless = { version = "0.8", optional = true }
+paste = { version = "1.0", optional = true }
+
 [dev-dependencies]
 env_logger = "0.11"
 log = "0.4"
+# critical-section implementation for tests (std-based)
+critical-section = { version = "1.1", features = ["std"] }

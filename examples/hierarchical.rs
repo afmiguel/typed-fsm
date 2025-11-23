@@ -21,12 +21,12 @@ use typed_fsm::{state_machine, Transition};
 // Volume FSM (Nested State Machine)
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct VolumeContext {
     level: u8,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum VolumeEvent {
     VolumeUp,
     VolumeDown,
@@ -95,7 +95,7 @@ struct PlayerContext {
     volume_ctx: VolumeContext,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum PlayerEvent {
     Play,
     Pause,

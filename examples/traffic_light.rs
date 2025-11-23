@@ -14,7 +14,7 @@ use typed_fsm::{state_machine, Transition};
 
 /// Represents the traffic light system context.
 /// In a real system, this would control actual lights via GPIO pins.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TrafficLightContext {
     /// Total cycles completed
     pub cycle_count: u32,
@@ -31,7 +31,7 @@ impl TrafficLightContext {
 // ============================================================================
 
 /// Events that drive the traffic light state machine.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Event {
     /// Timer elapsed, move to next state
     TimerTick,

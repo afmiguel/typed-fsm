@@ -20,7 +20,7 @@ struct LedContext {
 }
 
 // Event: Simple tick event to trigger state changes
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum Event {
     Tick,
 }
