@@ -18,7 +18,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Run tests
-        run: cargo test --all-features --verbose -- --test-threads=1
+        run: cargo test --all-features --verbose
+        env:
+          RUST_TEST_THREADS: 1
 
   fmt:
     name: Rustfmt
@@ -65,7 +67,9 @@ jobs:
       - name: Install tarpaulin
         run: cargo install cargo-tarpaulin
       - name: Generate coverage
-        run: cargo tarpaulin --verbose --all-features --workspace --timeout 120 --out xml -- --test-threads=1
+        run: cargo tarpaulin --verbose --all-features --workspace --timeout 120 --out xml
+        env:
+          RUST_TEST_THREADS: 1
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v3
         with:
