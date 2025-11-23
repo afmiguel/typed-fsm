@@ -31,11 +31,7 @@ macro_rules! __fsm_log {
         {
             log::info!($($arg)*);
         }
-        #[cfg(feature = "tracing")]
-        {
-            tracing::info!($($arg)*);
-        }
-        // When features disabled, generate no code at all (true zero-cost)
+        // When logging feature disabled, generate no code at all (true zero-cost)
     };
 }
 
@@ -89,6 +85,7 @@ macro_rules! __fsm_log {
 /// ```rust
 /// # use typed_fsm::{state_machine, Transition};
 /// # struct Context { data: u32 }
+/// # #[derive(Debug)]
 /// # enum Event { Update(u32), Activate, Ignore }
 /// # state_machine! {
 /// #     Name: FSM,
@@ -147,6 +144,7 @@ pub enum Transition<S> {
     /// ```rust
     /// # use typed_fsm::{state_machine, Transition};
     /// # struct Context { counter: u32 }
+    /// # #[derive(Debug)]
     /// # enum Event { Increment }
     /// # state_machine! {
     /// #     Name: FSM,
@@ -196,6 +194,7 @@ pub enum Transition<S> {
     /// ```rust
     /// # use typed_fsm::{state_machine, Transition};
     /// # struct Context { }
+    /// # #[derive(Debug)]
     /// # enum Event { Start, Stop }
     /// # state_machine! {
     /// #     Name: FSM,
@@ -257,6 +256,7 @@ pub enum Transition<S> {
 ///     counter: u32,
 /// }
 ///
+/// #[derive(Debug)]
 /// enum MyEvent {
 ///     Start,
 ///     Stop,
@@ -307,6 +307,7 @@ pub enum Transition<S> {
 /// ```rust
 /// # use typed_fsm::{state_machine, Transition};
 /// # struct MyContext { counter: u32 }
+/// # #[derive(Debug)]
 /// # enum MyEvent { Start, Stop }
 /// # state_machine! {
 /// #     Name: MyMachine,
@@ -388,6 +389,7 @@ macro_rules! state_machine {
             /// ```rust
             /// # use typed_fsm::{state_machine, Transition};
             /// # struct Context { count: u32 }
+            /// # #[derive(Debug)]
             /// # enum Event { Tick }
             /// # state_machine! {
             /// #     Name: FSM,
@@ -415,6 +417,7 @@ macro_rules! state_machine {
             /// ```rust,no_run
             /// # use typed_fsm::{state_machine, Transition};
             /// # struct Context { count: u32 }
+            /// # #[derive(Debug)]
             /// # enum Event { Tick }
             /// # state_machine! {
             /// #     Name: FSM,

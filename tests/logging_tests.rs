@@ -158,6 +158,7 @@ fn test_logging_transition_none() {
 // Test 2: Complex FSM with multiple states
 // ============================================================================
 
+#[allow(dead_code)]
 struct PaymentContext {
     amount: f32,
     processed: bool,
@@ -274,6 +275,7 @@ struct SelfTransitionContext {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 enum SelfEvent {
     Reset,
     Advance,

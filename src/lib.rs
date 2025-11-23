@@ -26,6 +26,7 @@
 //! }
 //!
 //! // Event: Simple tick event
+//! #[derive(Debug)]
 //! enum Event {
 //!     Tick,
 //! }
@@ -88,6 +89,7 @@
 //! }
 //!
 //! // Define your events
+//! #[derive(Debug)]
 //! enum LightEvent {
 //!     TurnOn,
 //!     TurnOff,
@@ -150,6 +152,7 @@
 //! ```rust
 //! # use typed_fsm::{state_machine, Transition};
 //! # struct Context { data: u32 }
+//! # #[derive(Debug)]
 //! # enum Event { Update(u32), Ignore }
 //! # state_machine! {
 //! #     Name: FSM,
@@ -184,6 +187,7 @@
 //! ```rust
 //! # use typed_fsm::{state_machine, Transition};
 //! # struct Context { }
+//! # #[derive(Debug)]
 //! # enum Event { Start, Stop }
 //! # state_machine! {
 //! #     Name: Machine,
@@ -232,6 +236,7 @@
 //! # use std::sync::{Arc, Mutex};
 //! # use std::thread;
 //! # struct Context { }
+//! # #[derive(Debug)]
 //! # enum Event { Tick }
 //! # state_machine! {
 //! #     Name: FSM,

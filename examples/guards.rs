@@ -32,8 +32,12 @@ struct ATMContext {
 #[derive(Debug, Clone)]
 enum ATMEvent {
     InsertCard,
-    EnterPIN { pin: u32 },
-    Withdraw { amount: u32 },
+    EnterPIN {
+        pin: u32,
+    },
+    Withdraw {
+        amount: u32,
+    },
     #[allow(dead_code)]
     Cancel,
 }

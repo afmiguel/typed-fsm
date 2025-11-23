@@ -25,6 +25,12 @@ pub struct MockTimer {
     is_running: bool,
 }
 
+impl Default for MockTimer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MockTimer {
     pub fn new() -> Self {
         Self {

@@ -19,7 +19,9 @@ struct PINContext {
 
 #[derive(Debug, Clone, PartialEq)]
 enum PINEvent {
-    EnterPIN { pin: u32 },
+    EnterPIN {
+        pin: u32,
+    },
     #[allow(dead_code)]
     Reset,
 }
@@ -450,9 +452,12 @@ fn test_guard_list_authorized_user() {
     let mut access = AccessControl::LoggedOut;
     access.init(&mut ctx);
 
-    access.dispatch(&mut ctx, &AccessEvent::Login {
-        username: "alice".to_string(),
-    });
+    access.dispatch(
+        &mut ctx,
+        &AccessEvent::Login {
+            username: "alice".to_string(),
+        },
+    );
 
     assert!(matches!(access, AccessControl::LoggedIn));
 }
@@ -466,9 +471,12 @@ fn test_guard_list_unauthorized_user() {
     let mut access = AccessControl::LoggedOut;
     access.init(&mut ctx);
 
-    access.dispatch(&mut ctx, &AccessEvent::Login {
-        username: "eve".to_string(),
-    });
+    access.dispatch(
+        &mut ctx,
+        &AccessEvent::Login {
+            username: "eve".to_string(),
+        },
+    );
 
     assert!(matches!(access, AccessControl::Denied));
 }

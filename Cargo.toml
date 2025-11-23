@@ -41,12 +41,10 @@ path = "examples/timeouts.rs"
 [features]
 default = []
 logging = ["log"]
-tracing = ["tracing-core"]
 
 [dependencies]
 # Optional logging support
 log = { version = "0.4", optional = true }
-tracing-core = { version = "0.1", optional = true, default-features = false }
 
 [dev-dependencies]
 env_logger = "0.11"

@@ -30,8 +30,8 @@
 //!
 //! Run with: `cargo run --example timeouts`
 
-use typed_fsm::{state_machine, Transition};
 use std::time::{Duration, Instant};
+use typed_fsm::{state_machine, Transition};
 
 // ============================================================================
 // Timer Trait Abstraction
@@ -56,6 +56,12 @@ pub trait Timer {
 pub struct StdTimer {
     start_time: Option<Instant>,
     duration: Duration,
+}
+
+impl Default for StdTimer {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl StdTimer {
@@ -104,7 +110,7 @@ enum WiFiEvent {
     Connected,
     #[allow(dead_code)]
     Disconnect,
-    CheckTimeout,  // Polled event to check timeout
+    CheckTimeout, // Polled event to check timeout
 }
 
 state_machine! {
@@ -225,7 +231,9 @@ struct SessionContext {
 
 #[derive(Debug, Clone)]
 enum SessionEvent {
-    Login { username: String },
+    Login {
+        username: String,
+    },
     Activity,
     CheckTimeout,
     #[allow(dead_code)]
@@ -411,8 +419,8 @@ fn run_wifi_example() {
         timer: StdTimer::new(),
         retry_count: 0,
         max_retries: 3,
-        connection_timeout_ms: 2000,  // 2 second timeout
-        retry_delay_ms: 1000,          // 1 second between retries
+        connection_timeout_ms: 2000, // 2 second timeout
+        retry_delay_ms: 1000,        // 1 second between retries
     };
 
     let mut wifi = WiFi::Idle;
@@ -423,14 +431,14 @@ fn run_wifi_example() {
 
     // Simulate timeout by advancing time
     std::thread::sleep(std::time::Duration::from_millis(500));
-    wifi.dispatch(&mut ctx, &WiFiEvent::CheckTimeout);  // Not expired yet
+    wifi.dispatch(&mut ctx, &WiFiEvent::CheckTimeout); // Not expired yet
 
     std::thread::sleep(std::time::Duration::from_millis(1600));
-    wifi.dispatch(&mut ctx, &WiFiEvent::CheckTimeout);  // Timeout! (total 2.1s)
+    wifi.dispatch(&mut ctx, &WiFiEvent::CheckTimeout); // Timeout! (total 2.1s)
 
     // Wait for retry delay
     std::thread::sleep(std::time::Duration::from_millis(1100));
-    wifi.dispatch(&mut ctx, &WiFiEvent::CheckTimeout);  // Retry delay complete
+    wifi.dispatch(&mut ctx, &WiFiEvent::CheckTimeout); // Retry delay complete
 
     // This time, simulate successful connection
     std::thread::sleep(std::time::Duration::from_millis(100));
@@ -440,7 +448,7 @@ fn run_wifi_example() {
 fn run_session_example() {
     let mut ctx = SessionContext {
         timer: StdTimer::new(),
-        session_timeout_ms: 3000,  // 3 second timeout
+        session_timeout_ms: 3000, // 3 second timeout
         username: String::new(),
     };
 
@@ -448,9 +456,12 @@ fn run_session_example() {
     session.init(&mut ctx);
 
     // User logs in
-    session.dispatch(&mut ctx, &SessionEvent::Login {
-        username: "alice".to_string(),
-    });
+    session.dispatch(
+        &mut ctx,
+        &SessionEvent::Login {
+            username: "alice".to_string(),
+        },
+    );
 
     // User activity (resets timer)
     std::thread::sleep(std::time::Duration::from_millis(1000));
@@ -462,13 +473,13 @@ fn run_session_example() {
 
     // No activity - timeout
     std::thread::sleep(std::time::Duration::from_millis(3100));
-    session.dispatch(&mut ctx, &SessionEvent::CheckTimeout);  // Timeout!
+    session.dispatch(&mut ctx, &SessionEvent::CheckTimeout); // Timeout!
 }
 
 fn run_button_example() {
     let mut ctx = ButtonContext {
         timer: StdTimer::new(),
-        debounce_ms: 500,  // 500ms debounce
+        debounce_ms: 500, // 500ms debounce
         press_count: 0,
     };
 
@@ -487,12 +498,12 @@ fn run_button_example() {
 
     // Wait for debounce
     std::thread::sleep(std::time::Duration::from_millis(350));
-    button.dispatch(&mut ctx, &ButtonEvent::CheckTimeout);  // Debounce complete
+    button.dispatch(&mut ctx, &ButtonEvent::CheckTimeout); // Debounce complete
 
     // Second press
     std::thread::sleep(std::time::Duration::from_millis(100));
     button.dispatch(&mut ctx, &ButtonEvent::Press);
 
     std::thread::sleep(std::time::Duration::from_millis(550));
-    button.dispatch(&mut ctx, &ButtonEvent::CheckTimeout);  // Second press confirmed
+    button.dispatch(&mut ctx, &ButtonEvent::CheckTimeout); // Second press confirmed
 }
