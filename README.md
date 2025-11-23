@@ -47,10 +47,11 @@ A lightweight, zero-cost, **event-driven** finite state machine microframework f
 | **Lifecycle hooks** | ✓ | ✓ | ~² | ✗ |
 | **Hierarchical FSM** | ~³ | ✓ | ✗ | ✗ |
 | **Thread-safe (Send+Sync)** | ✓ | ? | ? | ? |
+| **ISR/Concurrency support** | ✓⁴ | ✗⁵ | ✗⁵ | ✗⁵ |
 | **Macro-based DSL** | ✓ | ✓ | ✓ | ✓ |
 | **Type-safe** | ✓ | ✓ | ✓ | ✓ |
-| **Dependencies** | 0 | 3⁴ | 1 | 2⁴ |
-| **Async support** | ✗⁵ | ✓ | ✓ | ✗ |
+| **Dependencies** | 0⁶ | 3⁷ | 1 | 2⁷ |
+| **Async support** | ✗⁸ | ✓ | ✓ | ✗ |
 | **Diagram generation** | ✗ | ✗ | ✗ | ✓ |
 
 [t]: https://crates.io/crates/typed-fsm
@@ -61,13 +62,16 @@ A lightweight, zero-cost, **event-driven** finite state machine microframework f
 ¹ rust-fsm: States cannot carry data in DSL (manual implementation possible)
 ² smlang: Has guards/actions, but not explicit entry/exit hooks per state
 ³ typed-fsm: Via nested FSMs in context (compositional, not native like statig)
-⁴ Optional dependencies (can be disabled with feature flags)
-⁵ typed-fsm: Can be used within async code, but hooks are synchronous (no async fn support)
+⁴ typed-fsm: Native support via `concurrent` feature. Atomic protection, event queuing, ISR-safe dispatch
+⁵ No native ISR/concurrency support. Manual synchronization required (Arc<Mutex<>>, critical sections)
+⁶ typed-fsm: **Zero dependencies by default**. Optional dependencies when features enabled: `logging` (+1 dep), `concurrent` (+3 deps)
+⁷ Optional dependencies (can be disabled with feature flags)
+⁸ typed-fsm: Can be used within async code, but hooks are synchronous (no async fn support)
 
 ### When to Choose Each
 
 **Choose typed-fsm if you need:**
-- Absolute zero dependencies (embedded, security-critical)
+- Absolute zero dependencies by default (embedded, security-critical)
 - Guaranteed zero-cost abstraction with no runtime overhead
 - Explicit lifecycle hooks (entry/process/exit)
 - Clear thread-safety guarantees (auto Send+Sync)
@@ -92,7 +96,7 @@ A lightweight, zero-cost, **event-driven** finite state machine microframework f
 
 ### Key Advantages of typed-fsm
 
-1. **True Zero Dependencies** - The only FSM library with absolutely no dependencies, perfect for security-critical applications
+1. **True Zero Dependencies by Default** - No dependencies in default configuration, perfect for security-critical applications. Optional features add minimal, vetted dependencies only when needed (`logging`: +1, `concurrent`: +3)
 2. **Genuine Zero-Cost Abstraction** - Compiles to optimal code without procedural macro overhead
 3. **Thread-Safety by Design** - Automatic Send+Sync when applicable, explicitly documented and tested
 4. **Complete Lifecycle Model** - Clean entry/process/exit pattern without DSL limitations
@@ -975,7 +979,16 @@ The `concurrent` feature adds atomic protection to prevent re-entrant dispatch c
 ```toml
 [dependencies]
 typed-fsm = { version = "0.4", features = ["concurrent"] }
+
+# Requires critical-section implementation for your platform:
+# - For std: critical-section with "std" feature (included automatically)
+# - For embedded: Use your HAL's critical-section implementation
 ```
+
+**Dependencies added by `concurrent` feature:**
+- `critical-section` v1.1 - Portable critical sections (interrupt-safe primitives)
+- `heapless` v0.8 - No-alloc data structures (event queue)
+- `paste` v1.0 - Macro hygiene (static variable name generation)
 
 ### Performance
 
