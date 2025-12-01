@@ -23,14 +23,20 @@
 //! ```
 
 // Logging support (optional) - Internal macro for code generation
+#[cfg(feature = "logging")]
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __fsm_log {
     ($($arg:tt)*) => {
-        #[cfg(feature = "logging")]
-        {
-            log::info!($($arg)*);
-        }
+        log::info!($($arg)*);
+    };
+}
+
+#[cfg(not(feature = "logging"))]
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __fsm_log {
+    ($($arg:tt)*) => {
         // When logging feature disabled, generate no code at all (true zero-cost)
     };
 }
