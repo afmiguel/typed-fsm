@@ -319,6 +319,7 @@
 //! ## Examples
 //!
 //! See the `examples/` directory for complete examples:
+//! - \*\*\[New\]\*\* Raspberry Pi Pico 2 W Demo: \[typed-fsm-pico-test\](<https://github.com/afmiguel/typed-fsm-pico-test>) - Real-world usage on RP2350 interacting with Hardware (LED, ADC, Timer).
 //! - `motor.rs` - Motor control (complex, event-driven) - **start here!**
 //! - `traffic_light.rs` - Traffic light controller (simple, event-driven)
 //! - `guards.rs` - Conditional transitions (ATM, door lock, orders)

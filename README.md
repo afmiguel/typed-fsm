@@ -1125,33 +1125,16 @@ cargo test --test concurrent_tests --features concurrent  # 9 tests (v0.4.0)
 
 ## Examples
 
-Run the included examples (ordered by complexity):
+See the `examples/` directory for complete examples:
 
-```bash
-# Simplest example: LED blink (start here!)
-cargo run --example blink
-
-# Traffic light controller
-cargo run --example traffic_light
-
-# Motor control system with safety checks
-cargo run --example motor
-
-# Guards: Conditional transitions (ATM, door lock, order validation)
-cargo run --example guards
-
-# Logging: FSM instrumentation
-RUST_LOG=info cargo run --example logging --features logging
-
-# Timeouts: Timer pattern (WiFi, session, debouncing)
-cargo run --example timeouts
-
-# Concurrency: ISR-safe dispatch (simulated interrupts)
-cargo run --example concurrent_isr --features concurrent
-
-# Concurrency: Thread-safe dispatch (multithreading)
-cargo run --example concurrent_threads --features concurrent
-```
+- \*\*\[New\]\*\* Raspberry Pi Pico 2 W Demo: \[typed-fsm-pico-test\](https://github.com/afmiguel/typed-fsm-pico-test) - Real-world usage on RP2350 interacting with Hardware (LED, ADC, Timer).
+- `motor.rs`: Motor control system (Complex, Event-Driven) - **Start here!**
+- `traffic_light.rs`: Traffic light controller (Simple, Event-Driven)
+- `guards.rs`: Conditional transitions (ATM, Door Lock, Shop Orders)
+- `logging.rs`: FSM with logging instrumentation
+- `timeouts.rs`: Timer patterns (WiFi Connection, Session Timeout, Debouncing)
+- `concurrent_isr.rs`: ISR-safe dispatch (requires `concurrent` feature)
+- `concurrent_threads.rs`: Thread-safe dispatch (requires `concurrent` feature)
 
 ## How It Works
 
