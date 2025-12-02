@@ -49,19 +49,29 @@ name = "concurrent_threads"
 path = "examples/concurrent_threads.rs"
 required-features = ["concurrent"]
 
+[[example]]
+name = "avr_blink"
+path = "examples/avr_blink.rs"
+required-features = ["avr-concurrent"]
+
 [features]
 default = []
 logging = ["log"]
 concurrent = ["critical-section", "heapless", "paste"]
+# New feature for AVR-specific concurrency support
+avr-concurrent = ["concurrent", "avr-device/critical-section-impl"]
 
 [dependencies]
 # Optional logging support
 log = { version = "0.4", optional = true }
 
 # Optional concurrency support (ISR + Multithreading)
-critical-section = { version = "1.1", optional = true }
+critical-section = { version = "1.1", optional = true, features = ["single-core"] }
 heapless = { version = "0.8", optional = true }
 paste = { version = "1.0", optional = true }
+
+# New dependency for AVR
+avr-device = { version = "0.5", optional = true }
 
 [dev-dependencies]
 env_logger = "0.11"
