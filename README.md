@@ -42,6 +42,7 @@ Enable the `concurrent` feature for interrupt-safe and thread-safe dispatch:
 - **Dropped Events Monitoring** - Track and diagnose queue overflows
   - `dropped_events_count()` API for production monitoring
   - Debug mode panics on overflow for early detection
+- **Broad Architecture Support** - Works on ARM Cortex-M, RISC-V, **AVR**, and Desktop (x86/ARM64) via `portable-atomic`.
 - **Performance** - ~10-15% overhead when enabled, **zero** overhead when disabled
 
 ## Why typed-fsm?
@@ -145,7 +146,7 @@ struct LedContext {
 
 // Event: Simple tick
 enum Event {
-    Tick,a 
+    Tick,
 }
 
 // State machine: On ↔ Off
@@ -993,6 +994,7 @@ The `concurrent` feature adds atomic protection to prevent re-entrant dispatch c
 2. **Automatic queuing** - If dispatch is busy, the event is queued (FIFO order)
 3. **Queue processing** - All queued events are processed before releasing the lock
 4. **Zero overhead when disabled** - Standard implementation has no concurrency cost
+5. **Portable Atomics** - Uses `portable-atomic` for broad architecture support (AVR, Cortex-M, RISC-V, Desktop).
 
 ### Installation
 
@@ -1009,6 +1011,7 @@ typed-fsm = { version = "0.4", features = ["concurrent"] }
 - `critical-section` v1.1 - Portable critical sections (interrupt-safe primitives)
 - `heapless` v0.8 - No-alloc data structures (event queue)
 - `paste` v1.0 - Macro hygiene (static variable name generation)
+- `portable-atomic` v1.0 - Portable atomic types for all architectures
 
 ### Performance
 

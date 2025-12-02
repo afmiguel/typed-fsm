@@ -274,8 +274,8 @@
 //! enable the optional `concurrent` feature. This adds protection against re-entrant
 //! dispatch calls using atomic operations and lock-free queues.
 //!
-//! This feature now supports architectures without native atomic instructions (like AVR)
-//! by leveraging the `portable-atomic` crate.
+//! This feature supports all architectures (including AVR and ARM Cortex-M) by automatically
+//! adapting to the target platform via the `portable-atomic` crate.
 //!
 //! ### When to Use
 //!
