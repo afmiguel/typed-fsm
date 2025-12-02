@@ -672,15 +672,15 @@ macro_rules! state_machine {
 
         // Concurrency control: unique statics per state machine
         paste::paste! {
-            static [<DISPATCH_ACTIVE_ $enum_name:upper>]: core::sync::atomic::AtomicBool =
-                core::sync::atomic::AtomicBool::new(false);
+            static [<DISPATCH_ACTIVE_ $enum_name:upper>]: portable_atomic::AtomicBool =
+                portable_atomic::AtomicBool::new(false);
 
             static [<PENDING_QUEUE_ $enum_name:upper>]: critical_section::Mutex<
                 core::cell::RefCell<heapless::Deque<$event_type, $queue_capacity>>
             > = critical_section::Mutex::new(core::cell::RefCell::new(heapless::Deque::new()));
 
-            static [<DROPPED_EVENTS_ $enum_name:upper>]: core::sync::atomic::AtomicUsize =
-                core::sync::atomic::AtomicUsize::new(0);
+            static [<DROPPED_EVENTS_ $enum_name:upper>]: portable_atomic::AtomicUsize =
+                portable_atomic::AtomicUsize::new(0);
         }
 
         impl $enum_name {
@@ -792,7 +792,7 @@ macro_rules! state_machine {
             /// ```
             pub fn dropped_events_count() -> usize {
                 paste::paste! {
-                    use core::sync::atomic::Ordering;
+                    use portable_atomic::Ordering;
                     [<DROPPED_EVENTS_ $enum_name:upper>].load(Ordering::Relaxed)
                 }
             }
@@ -824,7 +824,7 @@ macro_rules! state_machine {
             /// ```
             pub fn reset_dropped_count() {
                 paste::paste! {
-                    use core::sync::atomic::Ordering;
+                    use portable_atomic::Ordering;
                     [<DROPPED_EVENTS_ $enum_name:upper>].store(0, Ordering::Relaxed);
                 }
             }
@@ -881,7 +881,7 @@ macro_rules! state_machine {
                 $event_type: Clone
             {
                 paste::paste! {
-                    use core::sync::atomic::Ordering;
+                    use portable_atomic::Ordering;
 
                     // Try to acquire dispatch lock atomically
                     if [<DISPATCH_ACTIVE_ $enum_name:upper>]

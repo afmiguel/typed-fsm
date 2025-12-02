@@ -274,6 +274,9 @@
 //! enable the optional `concurrent` feature. This adds protection against re-entrant
 //! dispatch calls using atomic operations and lock-free queues.
 //!
+//! This feature now supports architectures without native atomic instructions (like AVR)
+//! by leveraging the `portable-atomic` crate.
+//!
 //! ### When to Use
 //!
 //! Enable `concurrent` when:
@@ -286,7 +289,7 @@
 //! 1. **Immediate execution**: If no dispatch is active, executes immediately
 //! 2. **Queue if busy**: If dispatch is already active, event is queued (capacity: 16 events)
 //! 3. **FIFO processing**: Queued events are processed in order before releasing lock
-//! 4. **Atomic protection**: Uses `AtomicBool` with compare-exchange and `critical_section::Mutex`
+//! 4. **Atomic protection**: Uses `portable_atomic::AtomicBool` with compare-exchange and `critical_section::Mutex`
 //!
 //! ### Requirements
 //!
@@ -311,30 +314,7 @@
 //! ### Complete Examples
 //!
 //! - `examples/concurrent_isr.rs` - Simulated ISR with event queuing
-//! - `concurrent_threads.rs` - Multithreading with concurrent dispatch
-//! - `examples/concurrent_threads.rs` - Multithreading with concurrent dispatch
-//! - `concurrent_threads.rs` - Thread-safe dispatch (requires `concurrent` feature)
-//! - `concurrent_threads.rs` - Multithreading with concurrent dispatch
-//! - `concurrent_threads.rs` - Multithreading with concurrent dispatch
-//!
-//! ### AVR-Specific Concurrency (Feature: `avr-concurrent`)
-//! 
-//! For AVR microcontrollers, you can enable concurrency support using the `avr-concurrent` feature. This feature internally uses the `concurrent` feature and integrates with `avr-device` to provide an `critical-section` implementation suitable for AVR targets.
-//! 
-//! When `avr-concurrent` is enabled:
-//! - It automatically pulls in `critical-section` with its `single-core` feature, `heapless`, `paste`, and `avr-device` with its `critical-section-impl` feature.
-//! - Critical sections are handled by disabling interrupts, which is the standard mechanism on single-core AVR microcontrollers.
-//! 
-//! #### Usage
-//! 
-//! ```toml
-//! [dependencies]
-//! typed-fsm = { version = "0.4", features = ["avr-concurrent"] }
-//! ```
-//! 
-//! You will also need to set up your project for AVR development, including `avr-device` and a suitable HAL. Refer to `avr-device` and `avr-hal` documentation for more details on setting up your AVR project.
-//! - `tests/concurrent_tests.rs` - Comprehensive concurrency tests
-//!
+//! - `examples/concurrent_threads.rs` - Multithreading with concurrent dispatch//!
 //! **Performance:** ~10-15% overhead when enabled, zero overhead when disabled.
 //!
 //! ## Examples
