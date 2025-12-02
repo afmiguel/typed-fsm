@@ -314,7 +314,8 @@
 //! ### Complete Examples
 //!
 //! - `examples/concurrent_isr.rs` - Simulated ISR with event queuing
-//! - `examples/concurrent_threads.rs` - Multithreading with concurrent dispatch//!
+//! - `examples/concurrent_threads.rs` - Multithreading with concurrent dispatch
+//!
 //! **Performance:** ~10-15% overhead when enabled, zero overhead when disabled.
 //!
 //! ## Examples
