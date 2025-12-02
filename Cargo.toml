@@ -1,6 +1,6 @@
 [package]
 name = "typed-fsm"
-version = "0.4.6"
+version = "0.4.7"
 edition = "2021"
 rust-version = "1.75.0"
 authors = ["Afonso Miguel"]
@@ -49,11 +49,6 @@ name = "concurrent_threads"
 path = "examples/concurrent_threads.rs"
 required-features = ["concurrent"]
 
-[[example]]
-name = "avr_blink"
-path = "examples/avr_blink.rs"
-required-features = ["concurrent"]
-
 [features]
 default = []
 logging = ["log"]
@@ -74,4 +69,3 @@ env_logger = "0.11"
 log = "0.4"
 # critical-section implementation for tests (std-based)
 critical-section = { version = "1.1", features = ["std"] }
-avr-device = { version = "0.5", features = ["atmega328p"] }
