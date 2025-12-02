@@ -74,4 +74,4 @@ env_logger = "0.11"
 log = "0.4"
 # critical-section implementation for tests (std-based)
 critical-section = { version = "1.1", features = ["std"] }
-avr-device = "0.5"
+avr-device = { version = "0.5", features = ["atmega328p"] }
