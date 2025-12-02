@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.5] - 2025-12-02
+
+### Added
+- **Broad Architecture Support (AVR, Cortex-M, RISC-V)** - The `concurrent` feature now leverages the `portable-atomic` crate to provide atomic primitives on architectures that lack native support (like AVR), while using efficient hardware instructions on those that do (like ARM Cortex-M and RISC-V).
+- **AVR Blink Example** - Added `examples/avr_blink.rs` demonstrating usage on an Arduino Uno (ATmega328P) with the `concurrent` feature enabled.
+- **Documentation Updates** - Updated README and lib.rs to reflect the new architecture support and usage instructions.
+
+### Changed
+- Refactored `concurrent` implementation to use `portable_atomic` types instead of `core::sync::atomic`.
+- Removed `avr-device` dependency from main dependencies (now dev-dependency only).
+
 ## [0.4.4] - 2025-11-30
 
 ### Documentation
