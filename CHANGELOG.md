@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.6] - 2025-12-02
+
+### Documentation
+- **Added Arduino Uno Example**: Included a reference to the [typed-fsm-arduino-test](https://github.com/afmiguel/typed-fsm-arduino-test) repository in README and lib.rs. This demonstrates real-world usage on ATmega328P (AVR) using the `concurrent` feature.
+
 ## [0.4.5] - 2025-12-02
 
 ### Added

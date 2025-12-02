@@ -1131,6 +1131,7 @@ cargo test --test concurrent_tests --features concurrent  # 9 tests (v0.4.0)
 See the `examples/` directory for complete examples:
 
 - \*\*\[New\]\*\* Raspberry Pi Pico 2 W Demo: \[typed-fsm-pico-test\](https://github.com/afmiguel/typed-fsm-pico-test) - Real-world usage on RP2350 interacting with Hardware (LED, ADC, Timer).
+- \*\*\[New\]\*\* Arduino Uno Demo: \[typed-fsm-arduino-test\](https://github.com/afmiguel/typed-fsm-arduino-test) - Real-world usage on ATmega328P (AVR) with concurrent ISRs.
 - `motor.rs`: Motor control system (Complex, Event-Driven) - **Start here!**
 - `traffic_light.rs`: Traffic light controller (Simple, Event-Driven)
 - `guards.rs`: Conditional transitions (ATM, Door Lock, Shop Orders)
